@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config(); // CARICA SUBITO LE CHIAVI
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
@@ -8,117 +8,83 @@ const fs = require('fs');
 
 const app = express();
 
-// Middleware di base
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// --- AUTO-DIAGNOSI ---
+console.log("🔍 Verifica variabili di ambiente...");
+const requiredEnv = ['CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET', 'MONGO_URI'];
+requiredEnv.forEach(key => {
+  if (!process.env[key]) console.error(`❌ MANCA LA VARIABILE: ${key}`);
+});
 
-// 1. Configurazione Cloudinary
+// Configurazione Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// 2. Configurazione Multer (Gestione file in entrata)
-// Crea la cartella 'uploads' se non esiste
-if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads');
-}
-const upload = multer({ dest: 'uploads/' });
+app.use(cors());
+app.use(express.json());
 
-// 3. Connessione a MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-.then(() => console.log('✅ Connesso a MongoDB in modo sicuro!'))
-.catch(err => console.error('❌ Errore MongoDB:', err));
+// Cartella temporanea per gli upload
+const uploadDir = 'uploads/';
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+const upload = multer({ dest: uploadDir });
 
-// 4. Schema e Modello del Database per i contenuti (Video/Immagini)
-const MediaSchema = new mongoose.Schema({
-  titolo: { type: String, required: true },
-  url: { type: String, required: true },
-  tipo: { type: String }, // 'image' o 'video'
-  dataCreazione: { type: Date, default: Date.now }
-});
+// Connessione MongoDB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('✅ MongoDB Connesso con successo!'))
+  .catch(err => console.error('❌ Errore critico MongoDB:', err.message));
 
-const Media = mongoose.model('Media', MediaSchema);
+// Schema Semplice
+const Media = mongoose.model('Media', new mongoose.Schema({
+  titolo: String,
+  url: String,
+  tipo: String,
+  data: { type: Date, default: Date.now }
+}));
 
-// ==========================================
-// ROTTE DEL SERVER (API)
-// ==========================================
-
-// Endpoint per visualizzare tutti i file (Popola la Home del tuo sito)
-app.get('/api/media', async (req, res) => {
-  try {
-    const mediaList = await Media.find().sort({ dataCreazione: -1 });
-    res.status(200).json(mediaList);
-  } catch (error) {
-    console.error('Errore nel caricamento dei dati:', error);
-    res.status(500).json({ error: 'Errore nel recupero dei contenuti dal Vault' });
-  }
-});
-
-// Endpoint per l'Upload dei file (Foto e Video)
+// ROTTA CARICAMENTO (Immagini e Video)
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
-    // Controllo sicurezza
-    if (!req.file) {
-      return res.status(400).json({ error: 'Nessun file ricevuto dal server' });
-    }
+    if (!req.file) return res.status(400).json({ error: 'Nessun file inviato' });
 
-    const titoloInserito = req.body.titolo || 'Senza Titolo';
-    console.log(`⏳ Inizio upload per: ${titoloInserito}`);
+    console.log(`⏳ Caricamento in corso su Cloudinary: ${req.file.originalname}`);
 
-    // Caricamento effettivo su Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: 'piattaforma', // La tua cartella corretta
-      upload_preset: 'dome0082', // Il tuo preset Signed
-      resource_type: 'auto' // Accetta magicamente sia foto che video
+      folder: 'piattaforma',
+      resource_type: 'auto' // Rileva da solo se è foto o video
     });
 
-    // Scrittura nel database MongoDB
     const nuovoMedia = new Media({
-      titolo: titoloInserito,
+      titolo: req.body.titolo || 'Senza Titolo',
       url: result.secure_url,
       tipo: result.resource_type
     });
 
     await nuovoMedia.save();
-    console.log(`✅ Upload e salvataggio DB completati per: ${titoloInserito}`);
+    fs.unlinkSync(req.file.path); // Cancella file temporaneo
 
-    // Pulizia del file temporaneo dal server per non intasare la memoria di Render
-    fs.unlinkSync(req.file.path);
-
-    // Risposta di successo al Frontend
-    res.status(200).json({ 
-        message: 'Upload completato con successo!', 
-        data: nuovoMedia 
-    });
+    console.log(`✅ File salvato! Titolo: ${nuovoMedia.titolo}`);
+    res.status(200).json(nuovoMedia);
 
   } catch (error) {
-    console.error('Errore upload video:', error);
-    
-    // Pulizia di emergenza in caso di errore
-    if (req.file && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-    }
-
-    res.status(500).json({ 
-        error: 'Caricamento fallito. Verifica le credenziali Cloudinary o la dimensione del file.',
-        dettagli: error.message 
-    });
+    console.error('❌ Errore durante l\'upload:', error.message);
+    if (req.file) fs.unlinkSync(req.file.path);
+    res.status(500).json({ error: 'Errore interno: ' + error.message });
   }
 });
 
-// Endpoint di test per verificare che il server sia vivo
-app.get('/', (req, res) => {
-  res.send('D.PLATFORM Server è Online e Operativo!');
+// ROTTA VISUALIZZAZIONE (Per riempire il sito)
+app.get('/api/media', async (req, res) => {
+  try {
+    const dati = await Media.find().sort({ data: -1 });
+    res.json(dati);
+  } catch (err) {
+    res.status(500).json({ error: 'Errore recupero dati' });
+  }
 });
 
-// Avvio del server
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server sicuro attivo sulla porta ${PORT}`);
+  console.log(`🚀 SERVER ONLINE SULLA PORTA ${PORT}`);
 });

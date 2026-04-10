@@ -1,7 +1,7 @@
 {
   "name": "piattaforma-premium",
-  "version": "1.0.0",
-  "description": "D.PLATFORM - Vault Video",
+  "version": "1.1.0",
+  "description": "D.PLATFORM - Vault",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
