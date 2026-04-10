@@ -1,183 +1,124 @@
+require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const fs = require('fs');
-const path = require('path');
-const bcrypt = require('bcryptjs'); // Aggiunto per l'hashing delle password
 
 const app = express();
+
+// Middleware di base
+app.use(cors());
 app.use(express.json());
-app.use(express.static('.'));
+app.use(express.urlencoded({ extended: true }));
 
-// ==========================================
-// 1. CONFIGURAZIONE SICURA
-// ==========================================
-
+// 1. Configurazione Cloudinary
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-const MONGO_URI = process.env.MONGO_URI;
+// 2. Configurazione Multer (Gestione file in entrata)
+// Crea la cartella 'uploads' se non esiste
+if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads');
+}
+const upload = multer({ dest: 'uploads/' });
 
-mongoose.connect(MONGO_URI)
-    .then(() => console.log("✅ Connesso a MongoDB in modo sicuro!"))
-    .catch(err => console.error("❌ Errore MongoDB:", err));
+// 3. Connessione a MongoDB
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log('✅ Connesso a MongoDB in modo sicuro!'))
+.catch(err => console.error('❌ Errore MongoDB:', err));
 
-// ==========================================
-// 2. MODELLI DATABASE
-// ==========================================
+// 4. Schema e Modello del Database per i contenuti (Video/Immagini)
+const MediaSchema = new mongoose.Schema({
+  titolo: { type: String, required: true },
+  url: { type: String, required: true },
+  tipo: { type: String }, // 'image' o 'video'
+  dataCreazione: { type: Date, default: Date.now }
+});
 
-const Utente = mongoose.model('Utente', new mongoose.Schema({
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    nome: String
-}));
-
-const Video = mongoose.model('Video', new mongoose.Schema({
-    id: { type: Number, default: () => Date.now() },
-    titolo: String,
-    url: String,
-    autore: String,
-    likes: { type: Number, default: 0 },
-    thumbnail: String
-}));
-
-const Messaggio = mongoose.model('Messaggio', new mongoose.Schema({
-    autore: String, 
-    testo: String, 
-    fileUrl: String, 
-    fileName: String, 
-    orario: String,
-    data: { type: Date, default: Date.now }
-}));
-
-// Configurazione cartella temporanea per multer
-const upload = multer({ dest: 'temp/' });
-if (!fs.existsSync('temp')) fs.mkdirSync('temp');
+const Media = mongoose.model('Media', MediaSchema);
 
 // ==========================================
-// 3. ROTTE API
+// ROTTE DEL SERVER (API)
 // ==========================================
 
-// --- Ottenere Dati ---
-app.get('/api/dati', async (req, res) => {
-    try {
-        const video = await Video.find().sort({ _id: -1 });
-        const chat = await Messaggio.find().sort({ data: 1 });
-        res.json({ video, chat });
-    } catch (e) { 
-        console.error("Errore recupero dati:", e);
-        res.status(500).send("Errore del server"); 
+// Endpoint per visualizzare tutti i file (Popola la Home del tuo sito)
+app.get('/api/media', async (req, res) => {
+  try {
+    const mediaList = await Media.find().sort({ dataCreazione: -1 });
+    res.status(200).json(mediaList);
+  } catch (error) {
+    console.error('Errore nel caricamento dei dati:', error);
+    res.status(500).json({ error: 'Errore nel recupero dei contenuti dal Vault' });
+  }
+});
+
+// Endpoint per l'Upload dei file (Foto e Video)
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  try {
+    // Controllo sicurezza
+    if (!req.file) {
+      return res.status(400).json({ error: 'Nessun file ricevuto dal server' });
     }
-});
 
-// --- Autenticazione e Registrazione ---
-app.post('/api/auth', async (req, res) => {
-    const { email, password, azione } = req.body;
-    try {
-        if (azione === 'registrati') {
-            const esiste = await Utente.findOne({ email });
-            if (esiste) return res.json({ success: false, msg: "Email già in uso." });
+    const titoloInserito = req.body.titolo || 'Senza Titolo';
+    console.log(`⏳ Inizio upload per: ${titoloInserito}`);
 
-            // Cripta la password prima di salvarla
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
+    // Caricamento effettivo su Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: 'piattaforma', // La tua cartella corretta
+      upload_preset: 'dome0082', // Il tuo preset Signed
+      resource_type: 'auto' // Accetta magicamente sia foto che video
+    });
 
-            const nuovo = new Utente({ 
-                email, 
-                password: hashedPassword, 
-                nome: email.split('@')[0] 
-            });
-            await nuovo.save();
-            
-            // Rimuoviamo la password dall'oggetto restituito al frontend per sicurezza
-            nuovo.password = undefined; 
-            return res.json({ success: true, utente: nuovo });
-        }
+    // Scrittura nel database MongoDB
+    const nuovoMedia = new Media({
+      titolo: titoloInserito,
+      url: result.secure_url,
+      tipo: result.resource_type
+    });
 
-        // Logica di Login
-        const utente = await Utente.findOne({ email });
-        if (!utente) return res.json({ success: false, msg: "Utente non trovato." });
+    await nuovoMedia.save();
+    console.log(`✅ Upload e salvataggio DB completati per: ${titoloInserito}`);
 
-        // Confronta la password inserita con quella criptata nel database
-        const isMatch = await bcrypt.compare(password, utente.password);
-        if (!isMatch) return res.json({ success: false, msg: "Password errata." });
+    // Pulizia del file temporaneo dal server per non intasare la memoria di Render
+    fs.unlinkSync(req.file.path);
 
-        utente.password = undefined; // Nasconde la password prima di inviare la risposta
-        return res.json({ success: true, utente });
+    // Risposta di successo al Frontend
+    res.status(200).json({ 
+        message: 'Upload completato con successo!', 
+        data: nuovoMedia 
+    });
 
-    } catch (e) { 
-        console.error("Errore Auth:", e);
-        res.status(500).json({ success: false, msg: "Errore interno del server." }); 
-    }
-});
-
-// --- Upload Video ---
-app.post('/api/upload-video', upload.single('videoFile'), async (req, res) => {
-    if (!req.file) return res.status(400).json({ success: false, msg: "Nessun file fornito" });
+  } catch (error) {
+    console.error('Errore upload video:', error);
     
-    try {
-        const result = await cloudinary.uploader.upload(req.file.path, { 
-            resource_type: "video", 
-            folder: "piattaforma" 
-        });
-        
-        const nuovoVideo = new Video({
-            titolo: req.body.titolo, 
-            url: result.secure_url, 
-            autore: req.body.autore,
-            thumbnail: result.secure_url.replace('.mp4', '.jpg')
-        });
-        
-        await nuovoVideo.save();
-        res.json({ success: true, video: nuovoVideo });
-        
-    } catch (e) { 
-        console.error("Errore upload video:", e);
-        res.status(500).json({ success: false, msg: "Errore durante l'upload del video." }); 
-    } finally {
-        // Garantisce che il file temporaneo venga eliminato in caso di successo E in caso di errore
-        if (req.file && fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
+    // Pulizia di emergenza in caso di errore
+    if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
     }
+
+    res.status(500).json({ 
+        error: 'Caricamento fallito. Verifica le credenziali Cloudinary o la dimensione del file.',
+        dettagli: error.message 
+    });
+  }
 });
 
-// --- Invia Messaggio in Chat (con eventuale allegato) ---
-app.post('/api/chat', upload.single('allegato'), async (req, res) => {
-    try {
-        let fileUrl = null;
-        if (req.file) {
-            const result = await cloudinary.uploader.upload(req.file.path, { 
-                resource_type: "auto" 
-            });
-            fileUrl = result.secure_url;
-        }
-        
-        const msg = new Messaggio({
-            autore: req.body.autore, 
-            testo: req.body.testo, 
-            fileUrl: fileUrl,
-            orario: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        });
-        
-        await msg.save();
-        const chat = await Messaggio.find().sort({ data: 1 });
-        res.json({ success: true, chat });
-        
-    } catch (e) { 
-        console.error("Errore chat:", e);
-        res.status(500).json({ success: false, msg: "Errore durante l'invio del messaggio." }); 
-    } finally {
-        // Pulizia file temporaneo
-        if (req.file && fs.existsSync(req.file.path)) {
-            fs.unlinkSync(req.file.path);
-        }
-    }
+// Endpoint di test per verificare che il server sia vivo
+app.get('/', (req, res) => {
+  res.send('D.PLATFORM Server è Online e Operativo!');
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server sicuro attivo sulla porta ${PORT}`));
+// Avvio del server
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => {
+  console.log(`🚀 Server sicuro attivo sulla porta ${PORT}`);
+});
