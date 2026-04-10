@@ -1,211 +1,25 @@
-/* --- VARIABILI E RESET --- */
-:root {
-    --red: #ff0000;
-    --black: #000000;
-    --white: #ffffff;
-    --gray-bg: #f4f4f4;
-}
+:root { --red: #ff0000; --black: #000; --white: #fff; }
+body { background: var(--white); font-family: Arial, sans-serif; margin: 0; color: var(--black); }
 
-body {
-    background-color: var(--white);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0;
-    padding: 0;
-    transition: opacity 0.3s ease; /* Per il regolatore di luminosità */
-}
+/* Logo Gigante */
+.logo-giant { color: var(--red); font-size: 100px; font-weight: 900; margin: 0; }
 
-/* --- SCHERMATA LOGIN --- */
-#login-screen {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--white);
-}
+header { background: var(--black); color: var(--white); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+.search-box { background: var(--white); border-radius: 20px; padding: 5px 15px; display: flex; align-items: center; }
+.search-box input { border: none; outline: none; padding: 5px; width: 250px; }
 
-.logo-main {
-    color: var(--red);
-    font-size: 100px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-}
+.sidebar { width: 250px; background: #f9f9f9; height: 100vh; position: fixed; border-right: 1px solid #ddd; padding: 20px; }
+.sidebar li { list-style: none; padding: 15px; cursor: pointer; font-weight: bold; border-bottom: 1px solid #eee; transition: 0.3s; }
+.sidebar li:hover { color: var(--red); background: #eee; }
 
-.login-card {
-    background-color: var(--black);
-    padding: 40px;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    text-align: center;
-}
+.video-grid { margin-left: 280px; padding: 30px; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
+.video-card { background: var(--black); color: var(--white); border-radius: 15px; overflow: hidden; position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+video { width: 100%; height: 210px; display: block; object-fit: cover; }
 
-.login-card input {
-    display: block;
-    margin: 15px auto;
-    padding: 12px;
-    width: 280px;
-    border-radius: 5px;
-    border: none;
-    outline: none;
-}
+.progress-container { width: 100%; background: #ddd; height: 20px; border-radius: 10px; display: none; margin: 15px 0; overflow: hidden; }
+.progress-bar { width: 0%; height: 100%; background: var(--red); text-align: center; color: white; font-size: 12px; line-height: 20px; }
 
-.login-card button {
-    background-color: var(--red);
-    color: white;
-    border: none;
-    padding: 12px 30px;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 5px;
-    transition: transform 0.2s;
-}
+.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
+.modal-content { background: white; width: 550px; margin: 50px auto; padding: 30px; border-radius: 20px; color: black; }
 
-.login-card button:hover {
-    transform: scale(1.05);
-}
-
-/* --- INTERFACCIA PRINCIPALE --- */
-header {
-    background-color: var(--black);
-    color: white;
-    padding: 10px 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.search input {
-    padding: 8px 15px;
-    border-radius: 20px;
-    border: none;
-    width: 250px;
-}
-
-/* --- SIDEBAR --- */
-.sidebar {
-    width: 240px;
-    background-color: var(--gray-bg);
-    height: 100vh;
-    position: fixed;
-    top: 60px;
-    left: 0;
-    padding: 20px;
-    border-right: 1px solid #ddd;
-}
-
-.sidebar ul {
-    list-style: none;
-    padding: 0;
-}
-
-.sidebar li {
-    padding: 15px;
-    margin-bottom: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    border-radius: 8px;
-    transition: 0.2s;
-}
-
-.sidebar li:hover {
-    background-color: #e0e0e0;
-    color: var(--red);
-}
-
-.sidebar i {
-    margin-right: 10px;
-    width: 20px;
-}
-
-/* --- GRIGLIA VIDEO (RIQUADRI NERI) --- */
-main {
-    margin-left: 280px;
-    padding: 30px;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 25px;
-}
-
-.video-card {
-    background-color: var(--black);
-    color: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    transition: transform 0.3s;
-}
-
-.video-card:hover {
-    transform: translateY(-5px);
-}
-
-video {
-    width: 100%;
-    height: 180px;
-    background-color: #000;
-    display: block;
-}
-
-.card-info {
-    padding: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* --- MODALI E CHAT --- */
-.modal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    z-index: 2000;
-}
-
-.modal-content {
-    background: var(--white);
-    width: 90%;
-    max-width: 550px;
-    margin: 50px auto;
-    padding: 25px;
-    border-radius: 15px;
-    position: relative;
-}
-
-#chat-box {
-    height: 300px;
-    overflow-y: auto;
-    background: #f9f9f9;
-    padding: 15px;
-    border-radius: 10px;
-    border: 1px solid #eee;
-    margin-bottom: 15px;
-}
-
-/* --- CONTROLLI RAPIDI --- */
-.controls {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    background: var(--black);
-    padding: 12px 20px;
-    border-radius: 40px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    color: white;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-.controls input[type="range"] {
-    cursor: pointer;
-    accent-color: var(--red);
-}
+.adv-banner { margin-top: 40px; border: 2px dashed var(--red); padding: 15px; text-align: center; background: white; border-radius: 10px; }
