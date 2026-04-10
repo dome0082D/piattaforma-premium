@@ -2,97 +2,93 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>xxxD - Premium Vault</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root { --red: #ff0000; --black: #000; --white: #fff; }
-        body { background: var(--white); font-family: Arial; margin: 0; transition: 0.3s; }
-        #login-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .logo-main { color: var(--red); font-size: 100px; font-weight: bold; margin: 0; }
-        .login-card { background: var(--black); padding: 30px; border-radius: 10px; text-align: center; }
-        .login-card input { display: block; margin: 10px; padding: 10px; width: 250px; }
-        
-        header { background: var(--black); color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .sidebar { width: 250px; background: #f4f4f4; height: 100vh; position: fixed; border-right: 1px solid #ddd; padding: 20px; }
-        .sidebar li { list-style: none; padding: 15px; cursor: pointer; font-weight: bold; border-bottom: 1px solid #eee; }
-        .sidebar li:hover { color: var(--red); }
-        
-        main { margin-left: 290px; padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .video-card { background: var(--black); color: white; border-radius: 8px; overflow: hidden; }
-        video { width: 100%; height: 200px; background: #000; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
-        .modal-content { background: white; width: 500px; margin: 50px auto; padding: 20px; border-radius: 10px; }
-        .controls { position: fixed; bottom: 20px; right: 20px; background: var(--black); padding: 15px; border-radius: 50px; display: flex; gap: 10px; color: white; }
-    </style>
 </head>
 <body>
 
     <div id="login-screen">
         <h1 class="logo-main">xxxD</h1>
         <div class="login-card">
-            <input type="email" id="email" placeholder="Email">
+            <input type="email" id="email" placeholder="Inserisci la tua Email">
             <input type="password" id="pass" placeholder="Password">
-            <button onclick="app.login()" style="background:var(--red); color:white; border:none; padding:10px 20px; cursor:pointer;">ENTRA</button>
+            <button onclick="app.login()">ENTRA ORA</button>
         </div>
     </div>
 
     <div id="app-content" style="display:none">
         <header>
-            <span style="color:var(--red); font-weight:bold; cursor:pointer" onclick="app.showSec('all')">xxxD</span>
-            <div class="search"><input type="text" id="search" placeholder="Cerca..."> <i class="fa fa-search"></i></div>
-            <div id="user-tag"></div>
+            <span class="logo-nav" onclick="app.showSec('all')">xxxD</span>
+            <div class="search-container">
+                <input type="text" id="search" placeholder="Cerca nel vault...">
+                <i class="fa fa-search"></i>
+            </div>
+            <div id="user-display" style="color:white; font-weight:bold"></div>
         </header>
 
-        <div class="sidebar">
-            <ul>
-                <li onclick="app.showSec('all')"><i class="fa fa-home"></i> Home</li>
-                <li onclick="app.showSec('likes')"><i class="fa fa-heart"></i> I miei Like</li>
-                <li onclick="app.showSec('mine')"><i class="fa fa-upload"></i> I miei Upload</li>
-                <li onclick="app.toggleModal('chat-modal')"><i class="fa fa-comments"></i> Chat & Allegati</li>
-                <li onclick="app.toggleModal('settings-modal')"><i class="fa fa-cog"></i> Impostazioni</li>
-            </ul>
-            <div style="border:1px dashed red; padding:10px; margin-top:20px; font-size:12px">
-                Noleggia Spazio: dome0082@gmail.com
-            </div>
+        <div style="display:flex">
+            <nav class="sidebar">
+                <ul>
+                    <li onclick="app.showSec('all')"><i class="fa fa-home"></i> Home</li>
+                    <li onclick="app.showSec('likes')"><i class="fa fa-heart"></i> I miei Like</li>
+                    <li onclick="app.showSec('mine')"><i class="fa fa-upload"></i> I miei Upload</li>
+                    <li onclick="app.toggleModal('chat-modal')"><i class="fa fa-comments"></i> Chat & Allegati</li>
+                    <li onclick="app.toggleModal('settings-modal')"><i class="fa fa-cog"></i> Impostazioni</li>
+                </ul>
+                <div class="adv-box">
+                    <p>Noleggia Spazio</p>
+                    <small>dome0082@gmail.com</small>
+                </div>
+            </nav>
+
+            <main>
+                <div class="upload-section">
+                    <input type="text" id="up-title" placeholder="Titolo contenuto...">
+                    <input type="file" id="up-file" accept="video/*,image/*">
+                    <button id="upload-btn" onclick="app.upload()">CARICA ORA</button>
+                    
+                    <div id="progress-container" style="display:none; width:100%; background:#ddd; border-radius:10px; margin-top:15px; overflow:hidden;">
+                        <div id="progress-bar" style="width:0%; height:20px; background:red; color:white; text-align:center; font-size:12px; line-height:20px; transition: width 0.1s;">0%</div>
+                    </div>
+                </div>
+
+                <div id="video-grid" class="grid"></div>
+            </main>
         </div>
 
-        <main>
-            <div style="margin-bottom:20px">
-                <input type="text" id="up-title" placeholder="Titolo...">
-                <input type="file" id="up-file">
-                <button onclick="app.upload()">CARICA</button>
-            </div>
-            <div id="video-grid" class="grid"></div>
-        </main>
-
-        <div class="controls">
-            <i class="fa fa-sun"></i> <input type="range" min="0.3" max="1" step="0.1" oninput="app.setLight(this.value)">
-            <i class="fa fa-volume-up"></i> <input type="range" min="0" max="1" step="0.1" oninput="app.setVol(this.value)">
+        <div class="quick-controls">
+            <i class="fa fa-sun"></i> 
+            <input type="range" min="0.3" max="1" step="0.1" value="1" oninput="app.setLight(this.value)">
+            <i class="fa fa-volume-up"></i> 
+            <input type="range" min="0" max="1" step="0.1" value="0.5" oninput="app.setVol(this.value)">
         </div>
     </div>
 
     <div id="chat-modal" class="modal">
         <div class="modal-content">
-            <h3>Chat Premium</h3>
-            <div id="chat-box" style="height:250px; overflow-y:auto; background:#f9f9f9; padding:10px; margin-bottom:10px"></div>
-            <input type="text" id="chat-msg" placeholder="Messaggio...">
+            <h3>Chat & Allegati Premium</h3>
+            <div id="chat-box" style="height:250px; overflow-y:auto; border:1px solid #ccc; padding:10px; margin-bottom:10px"></div>
+            <input type="text" id="chat-msg" placeholder="Scrivi un messaggio...">
             <input type="file" id="chat-file">
             <button onclick="app.sendChat()">Invia</button>
-            <button onclick="app.toggleModal('chat-modal')">Chiudi</button>
+            <button onclick="app.toggleModal('chat-modal')" class="close-btn">Chiudi</button>
         </div>
     </div>
 
     <div id="settings-modal" class="modal">
         <div class="modal-content">
-            <h3>Impostazioni</h3>
-            <p>Email: <span id="set-email"></span></p>
-            <label>Qualità Video:</label>
-            <select><option>1080p</option><option>720p</option></select><br><br>
-            <label>Audio:</label>
-            <select><option>Surround</option><option>Stereo</option></select><br><br>
-            <button onclick="app.toggleModal('settings-modal')">Salva</button>
+            <h3>Impostazioni Account</h3>
+            <div class="setting-item">
+                <label>Qualità Streaming:</label>
+                <select><option>Auto (Consigliato)</option><option>1080p</option><option>720p</option></select>
+            </div>
+            <div class="setting-item">
+                <label>Audio:</label>
+                <select><option>Stereo</option><option>Surround 5.1</option></select>
+            </div>
+            <button onclick="app.toggleModal('settings-modal')" class="close-btn">Salva e Chiudi</button>
         </div>
     </div>
 
