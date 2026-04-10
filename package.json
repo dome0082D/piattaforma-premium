@@ -1,7 +1,7 @@
 {
-  "name": "piattaforma-premium",
-  "version": "1.1.0",
-  "description": "D.PLATFORM - Vault",
+  "name": "piattaforma-premium-xxxd",
+  "version": "2.0.0",
+  "description": "D.PLATFORM - Vault Video & Chat Premium",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -13,7 +13,8 @@
     "dotenv": "^16.0.0",
     "express": "^4.18.2",
     "mongoose": "^7.0.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "path": "^0.12.7"
   },
   "engines": {
     "node": ">=14.0.0"
