@@ -1,115 +1,111 @@
 const app = {
-    user: null,
-    brightness: 1,
-    volume: 0.5,
+    user: localStorage.getItem('user'),
+    data: [],
 
-    // --- AUTENTICAZIONE ---
     login: () => {
-        const email = document.getElementById('log-email').value;
-        const pass = document.getElementById('log-pass').value;
-        if (email && pass) {
-            app.user = { email: email };
-            localStorage.setItem('xxxD_user', email);
+        const mail = document.getElementById('email').value;
+        if(mail){
+            app.user = mail;
+            localStorage.setItem('user', mail);
+            location.reload();
+        }
+    },
+
+    init: async () => {
+        if(app.user){
             document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('main-app').style.display = 'block';
-            document.getElementById('user-name').innerText = email;
+            document.getElementById('app-content').style.display = 'block';
+            document.getElementById('user-tag').innerText = app.user;
+            document.getElementById('set-email').innerText = app.user;
             app.loadMedia();
-        } else {
-            alert("Inserisci email e password!");
+            setInterval(app.loadChat, 3000); // Aggiorna chat ogni 3 sec
         }
     },
 
-    logout: () => {
-        localStorage.removeItem('xxxD_user');
-        location.reload();
-    },
-
-    // --- GESTIONE VIDEO E FILE ---
     loadMedia: async () => {
-        try {
-            const res = await fetch('/api/media');
-            const data = await res.json();
-            const grid = document.getElementById('video-grid');
-            grid.innerHTML = '';
+        const res = await fetch('/api/media');
+        app.data = await res.json();
+        app.render(app.data);
+    },
 
-            data.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'video-card';
-                card.innerHTML = `
-                    <video src="${item.url}" preload="metadata" onmouseover="this.play()" onmouseout="this.pause()" muted></video>
-                    <div class="card-tools">
+    render: (list) => {
+        const grid = document.getElementById('video-grid');
+        grid.innerHTML = '';
+        list.forEach(item => {
+            // ANTEPRIMA: Se è video, crea thumbnail automatica
+            const thumb = item.tipo === 'video' ? item.url.replace(".mp4", ".jpg") : item.url;
+            grid.innerHTML += `
+                <div class="video-card">
+                    <video src="${item.url}" poster="${thumb}" onmouseover="this.play()" onmouseout="this.pause()" controls muted></video>
+                    <div style="padding:10px; display:flex; justify-content:space-between">
                         <span>${item.titolo}</span>
-                        <div>
-                            <i class="fa fa-heart" onclick="app.toggleLike('${item._id}')"></i>
-                            <i class="fa fa-trash" style="color:red; margin-left:10px" onclick="app.deleteMedia('${item._id}')"></i>
-                        </div>
+                        <i class="fa fa-trash" style="color:red; cursor:pointer" onclick="app.delete('${item._id}')"></i>
                     </div>
-                `;
-                grid.appendChild(card);
-            });
-        } catch (err) {
-            console.error("Errore caricamento:", err);
-        }
+                </div>
+            `;
+        });
+    },
+
+    showSec: (type) => {
+        if(type === 'all') app.render(app.data);
+        if(type === 'mine') app.render(app.data.filter(x => x.owner === app.user));
+        if(type === 'likes') alert("Sezione Like (In fase di popolamento)");
     },
 
     upload: async () => {
-        const fileInput = document.getElementById('up-file');
-        const titleInput = document.getElementById('up-title');
+        const file = document.getElementById('up-file').files[0];
+        const title = document.getElementById('up-title').value;
+        if(!file) return alert("Scegli un file");
         
-        if (!fileInput.files[0]) return alert("Seleziona un file!");
-
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-        formData.append('titolo', titleInput.value || 'Senza titolo');
-
-        alert("Caricamento avviato... attendi il completamento.");
-
-        try {
-            const res = await fetch('/api/upload', { method: 'POST', body: formData });
-            if (res.ok) {
-                alert("Caricato con successo!");
-                titleInput.value = '';
-                app.loadMedia();
-            }
-        } catch (err) {
-            alert("Errore durante l'upload.");
-        }
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('titolo', title);
+        fd.append('owner', app.user);
+        
+        alert("Caricamento in corso...");
+        await fetch('/api/upload', { method: 'POST', body: fd });
+        app.loadMedia();
     },
 
-    deleteMedia: async (id) => {
-        if (confirm("Vuoi eliminare definitivamente questo file?")) {
+    sendChat: async () => {
+        const msg = document.getElementById('chat-msg').value;
+        const file = document.getElementById('chat-file').files[0];
+        const fd = new FormData();
+        fd.append('user', app.user);
+        fd.append('msg', msg);
+        if(file) fd.append('file', file);
+        
+        await fetch('/api/chat/send', { method: 'POST', body: fd });
+        document.getElementById('chat-msg').value = '';
+        app.loadChat();
+    },
+
+    loadChat: async () => {
+        const res = await fetch('/api/chat');
+        const msgs = await res.json();
+        const box = document.getElementById('chat-box');
+        box.innerHTML = msgs.map(m => `
+            <div style="margin-bottom:5px">
+                <b style="color:red">${m.user}:</b> ${m.msg} 
+                ${m.fileUrl ? `<a href="${m.fileUrl}" target="_blank">📎 Allegato</a>` : ''}
+            </div>
+        `).join('');
+    },
+
+    delete: async (id) => {
+        if(confirm("Eliminare?")) {
             await fetch(`/api/media/${id}`, { method: 'DELETE' });
             app.loadMedia();
         }
     },
 
-    // --- CONTROLLI SITO ---
-    setLight: (val) => {
-        document.body.style.opacity = val;
-    },
-
-    setVol: (val) => {
-        const videos = document.querySelectorAll('video');
-        videos.forEach(v => v.volume = val);
-    },
-
     toggleModal: (id) => {
-        const modal = document.getElementById(id);
-        modal.style.display = (modal.style.display === 'block') ? 'none' : 'block';
+        const m = document.getElementById(id);
+        m.style.display = (m.style.display === 'block') ? 'none' : 'block';
     },
 
-    goHome: () => {
-        app.loadMedia();
-        document.querySelector('main').style.display = 'block';
-    }
+    setLight: (v) => document.body.style.opacity = v,
+    setVol: (v) => document.querySelectorAll('video').forEach(vid => vid.volume = v)
 };
 
-// Controllo sessione esistente
-window.onload = () => {
-    const savedUser = localStorage.getItem('xxxD_user');
-    if (savedUser) {
-        document.getElementById('log-email').value = savedUser;
-        document.getElementById('log-pass').value = "******";
-        app.login();
-    }
-};
+app.init();

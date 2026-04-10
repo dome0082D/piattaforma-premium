@@ -1,31 +1,211 @@
-:root { --red: #ff0000; --black: #000; --white: #fff; }
-body { background: var(--white); font-family: sans-serif; margin: 0; transition: opacity 0.3s; }
+/* --- VARIABILI E RESET --- */
+:root {
+    --red: #ff0000;
+    --black: #000000;
+    --white: #ffffff;
+    --gray-bg: #f4f4f4;
+}
 
-/* Login */
-#login-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.main-logo { color: var(--red); font-size: 120px; margin: 0; }
-.auth-box { background: var(--black); padding: 40px; border-radius: 15px; }
-.auth-box input { display: block; margin: 10px 0; padding: 10px; border-radius: 5px; border: none; }
-.auth-box button { width: 100%; padding: 10px; background: var(--red); color: white; border: none; cursor: pointer; }
+body {
+    background-color: var(--white);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    transition: opacity 0.3s ease; /* Per il regolatore di luminosità */
+}
 
-/* Header */
-header { background: var(--black); color: white; padding: 10px 30px; display: flex; justify-content: space-between; align-items: center; }
-.logo-red { color: var(--red); font-weight: bold; font-size: 28px; cursor: pointer; }
-.search-box { background: #333; padding: 5px 15px; border-radius: 20px; }
-.search-box input { background: transparent; border: none; color: white; outline: none; }
+/* --- SCHERMATA LOGIN --- */
+#login-screen {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--white);
+}
 
-/* Griglia Video */
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; padding: 20px; }
-.video-card { background: var(--black); border-radius: 10px; overflow: hidden; color: white; position: relative; }
-.video-card video { width: 100%; max-height: 200px; }
-.card-tools { padding: 10px; display: flex; justify-content: space-between; }
+.logo-main {
+    color: var(--red);
+    font-size: 100px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+}
 
-/* Sidebar */
-.layout { display: flex; }
-.sidebar { width: 220px; background: #f9f9f9; height: calc(100vh - 60px); padding: 20px; border-right: 1px solid #eee; }
-.sidebar li { padding: 12px; cursor: pointer; list-style: none; font-weight: bold; border-radius: 5px; }
-.sidebar li:hover { background: #eee; color: var(--red); }
+.login-card {
+    background-color: var(--black);
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    text-align: center;
+}
 
-/* Modali */
-.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; }
-.modal-content { background: white; width: 400px; margin: 100px auto; padding: 30px; border-radius: 10px; }
+.login-card input {
+    display: block;
+    margin: 15px auto;
+    padding: 12px;
+    width: 280px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+}
+
+.login-card button {
+    background-color: var(--red);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: transform 0.2s;
+}
+
+.login-card button:hover {
+    transform: scale(1.05);
+}
+
+/* --- INTERFACCIA PRINCIPALE --- */
+header {
+    background-color: var(--black);
+    color: white;
+    padding: 10px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.search input {
+    padding: 8px 15px;
+    border-radius: 20px;
+    border: none;
+    width: 250px;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+    width: 240px;
+    background-color: var(--gray-bg);
+    height: 100vh;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    padding: 20px;
+    border-right: 1px solid #ddd;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar li {
+    padding: 15px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: 0.2s;
+}
+
+.sidebar li:hover {
+    background-color: #e0e0e0;
+    color: var(--red);
+}
+
+.sidebar i {
+    margin-right: 10px;
+    width: 20px;
+}
+
+/* --- GRIGLIA VIDEO (RIQUADRI NERI) --- */
+main {
+    margin-left: 280px;
+    padding: 30px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+}
+
+.video-card {
+    background-color: var(--black);
+    color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.3s;
+}
+
+.video-card:hover {
+    transform: translateY(-5px);
+}
+
+video {
+    width: 100%;
+    height: 180px;
+    background-color: #000;
+    display: block;
+}
+
+.card-info {
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* --- MODALI E CHAT --- */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 2000;
+}
+
+.modal-content {
+    background: var(--white);
+    width: 90%;
+    max-width: 550px;
+    margin: 50px auto;
+    padding: 25px;
+    border-radius: 15px;
+    position: relative;
+}
+
+#chat-box {
+    height: 300px;
+    overflow-y: auto;
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #eee;
+    margin-bottom: 15px;
+}
+
+/* --- CONTROLLI RAPIDI --- */
+.controls {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: var(--black);
+    padding: 12px 20px;
+    border-radius: 40px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    color: white;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.controls input[type="range"] {
+    cursor: pointer;
+    accent-color: var(--red);
+}
