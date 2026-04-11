@@ -2,74 +2,118 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>xxxD Premium</title>
+    <title>xxxD - Vault Premium</title>
     <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
-    <div id="login-screen" style="text-align:center; padding-top:80px;">
+<body id="main-body">
+
+    <div id="login-screen">
         <h1 class="logo-giant">xxxD</h1>
-        <div style="background:black; padding:40px; border-radius:25px; display:inline-block; margin-top:20px;">
-            <input type="email" id="email" placeholder="Inserisci Email" style="padding:15px; width:280px; border-radius:5px; border:none;"><br><br>
-            <button onclick="app.login()" style="background:red; color:white; border:none; padding:15px 60px; cursor:pointer; font-weight:bold; border-radius:5px;">ENTRA ORA</button>
+        <div class="login-card">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="app.login()" class="btn-red">ENTRA</button>
+            <button onclick="app.login('anonimo')" class="btn-dark">ACCEDI COME ANONIMO</button>
         </div>
     </div>
 
-    <div id="app-content" style="display:none">
+    <div id="app-content" style="display: none;">
         <header>
-            <span style="color:red; font-size:35px; font-weight:900; cursor:pointer;" onclick="location.reload()">xxxD</span>
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Cerca nel vault...">
-                <i class="fa fa-search" style="color:black"></i>
+            <div class="logo-area" onclick="app.showSec('all')">
+                <span class="dome-text">dome</span> <span class="xxxd-text">xxxD</span>
             </div>
-            <div id="user-display" style="font-weight:bold"></div>
+
+            <div class="header-controls">
+                <div class="control-group">
+                    <i class="fa fa-sun"></i>
+                    <input type="range" id="bright-range" min="30" max="120" value="100" oninput="app.updateStyle()">
+                </div>
+                <div class="control-group">
+                    <i class="fa fa-volume-up"></i>
+                    <input type="range" id="vol-range" min="0" max="100" value="100" oninput="app.updateStyle()">
+                </div>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="search" placeholder="Cerca..." onkeyup="app.search()">
+                <i class="fa fa-search"></i>
+            </div>
         </header>
 
         <nav class="sidebar">
-            <ul>
+            <ul class="nav-links">
                 <li onclick="app.showSec('all')"><i class="fa fa-home"></i> Home</li>
-                <li onclick="app.showSec('likes')"><i class="fa fa-heart"></i> I miei Like</li>
-                <li onclick="app.showSec('mine')"><i class="fa fa-download"></i> I miei Download</li>
-                <li onclick="app.toggleModal('chat-modal')"><i class="fa fa-comments"></i> Chat & Allegati</li>
-                <li onclick="app.toggleModal('settings-modal')"><i class="fa fa-cog"></i> Impostazioni</li>
+                <li class="nav-label">CATEGORIE</li>
+                <li onclick="app.showSec('cat', 'film')">Film</li>
+                <li onclick="app.showSec('cat', 'musica')">Musica</li>
+                <li class="nav-label">PERSONALE</li>
+                <li onclick="app.showSec('likes')">I miei Like</li>
+                <li onclick="app.showSec('mine')">I miei Download</li>
+                <li class="nav-label">ALTRO</li>
+                <li onclick="app.toggleModal('chat-modal')">Chat & Allegati</li>
+                <li onclick="app.toggleModal('settings-modal')">Impostazioni</li>
             </ul>
+
+            <div class="online-box">
+                <span>ONLINE:</span>
+                <div id="online-list"></div>
+            </div>
+
             <div class="adv-banner">
-                <p style="margin:0; font-weight:bold;">PUBBLICITÀ</p>
-                <small>dome0082@gmail.com</small>
+                <p>PUBBLICITÀ</p>
+                <small>Noleggia questo spazio:</small>
+                <a href="mailto:dome0082@gmail.com">dome0082@gmail.com</a>
             </div>
         </nav>
 
-        <main style="margin-left: 280px; padding: 20px;">
-            <div style="background:#f0f0f0; padding:20px; border-radius:15px; margin-bottom:20px;">
-                <input type="text" id="up-title" placeholder="Titolo Video..." style="padding:10px;">
-                <input type="file" id="up-file" style="margin-left:10px;">
-                <button onclick="app.upload()" style="background:red; color:white; border:none; padding:10px 20px; cursor:pointer; font-weight:bold;">CARICA</button>
-                <div class="progress-container" id="p-cont"><div class="progress-bar" id="p-bar">0%</div></div>
+        <main>
+            <div id="upload-zone" class="upload-card">
+                <input type="text" id="up-title" placeholder="Titolo file...">
+                <input type="file" id="up-file">
+                <button onclick="app.upload()">CARICA</button>
+                <div id="p-cont" class="progress-container"><div id="p-bar"></div></div>
             </div>
+
             <div id="video-grid" class="video-grid"></div>
         </main>
     </div>
 
-    <div id="chat-modal" class="modal">
-        <div class="modal-content">
-            <h3>Chat con Allegati</h3>
-            <div id="chat-box" style="height:250px; overflow-y:auto; background:#f9f9f9; padding:15px; border:1px solid #ddd; margin-bottom:10px;"></div>
-            <input type="text" id="chat-msg" placeholder="Messaggio..." style="width:60%; padding:10px;">
-            <input type="file" id="chat-file">
-            <button onclick="app.sendChat()" style="background:red; color:white; border:none; padding:10px; margin-top:10px;">Invia</button>
-            <button onclick="app.toggleModal('chat-modal')">Chiudi</button>
-        </div>
-    </div>
-
     <div id="settings-modal" class="modal">
         <div class="modal-content">
-            <h3>Impostazioni Premium</h3>
-            <p>Audio: <select onchange="alert('Audio aggiornato')"><option>Stereo</option><option>Surround 5.1</option></select></p>
-            <p>Video: <select onchange="alert('Qualità aggiornata')"><option>1080p</option><option>720p</option><option>4K</option></select></p>
-            <button onclick="app.toggleModal('settings-modal')">Salva e Chiudi</button>
+            <h2>Impostazioni Account</h2>
+            <div class="set-row"><strong>Email:</strong> <span id="user-email"></span></div>
+            <div class="set-row">
+                <input type="password" id="new-pass" placeholder="Nuova Password">
+                <button onclick="alert('Password cambiata!')">Aggiorna</button>
+            </div>
+            <hr>
+            <h3>Qualità Video</h3>
+            <select id="set-res">
+                <option value="720">720p (Standard)</option>
+                <option value="1080">1080p (FHD)</option>
+            </select>
+            <h3>Audio</h3>
+            <select id="set-audio">
+                <option value="stereo">Stereo</option>
+                <option value="surround">Surround 5.1</option>
+            </select>
+            <button onclick="app.toggleModal('settings-modal')" class="btn-close">Salva e Chiudi</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <div id="chat-modal" class="modal">
+        <div class="modal-content">
+            <div id="chat-messages"></div>
+            <div class="chat-input">
+                <input type="text" id="chat-msg" placeholder="Messaggio...">
+                <input type="file" id="chat-file">
+                <button onclick="app.sendChat()">Invia</button>
+            </div>
+            <button onclick="app.toggleModal('chat-modal')" class="btn-close">Chiudi</button>
+        </div>
+    </div>
+
 </body>
 </html>
