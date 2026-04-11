@@ -2,38 +2,102 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>xxxD Premium Vault</title>
+    <title>xxxD - Premium Vault</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
-    <div class="sidebar">
-        <h2 onclick="app.loadMedia('all')">xxxD</h2>
-        <nav>
-            <button onclick="app.loadMedia('all')">Home</button>
-            <button onclick="app.loadMedia('video')">Video / Film</button>
-            <button onclick="document.getElementById('chat-section').scrollIntoView()">Chat</button>
-        </nav>
-    </div>
+<body id="v-body">
 
-    <div class="main">
-        <div class="upload-box">
-            <input type="text" id="up-title" placeholder="Titolo...">
-            <input type="file" id="up-file">
-            <button onclick="app.upload()">CARICA</button>
-            <div id="p-cont" style="display:none; width:100%; background:#333; margin-top:10px;">
-                <div id="p-bar" style="width:0%; background:red; height:20px; text-align:center; color:white;">0%</div>
+    <header>
+        <div class="header-left" onclick="app.showSec('all')">
+            <span class="dome-small">dome</span> <span class="xxxd-red">xxxD</span>
+        </div>
+        
+        <div class="header-center">
+            <div class="search-wrap">
+                <input type="text" id="search-input" placeholder="Cerca nel vault..." onkeyup="app.search()">
+                <i class="fa fa-search"></i>
             </div>
         </div>
 
-        <div id="gallery" class="gallery"></div>
+        <div class="header-right">
+            <div class="ctrl">
+                <i class="fa fa-sun"></i>
+                <input type="range" id="range-bright" min="30" max="120" value="100" oninput="app.updateVisual()">
+            </div>
+            <div class="ctrl">
+                <i class="fa fa-volume-up"></i>
+                <input type="range" id="range-vol" min="0" max="100" value="80" oninput="app.updateVisual()">
+            </div>
+        </div>
+    </header>
 
-        <div id="chat-section" class="chat-container">
-            <h3>Chat Globale</h3>
-            <div id="chat-box" class="chat-box"></div>
-            <div class="chat-input">
-                <input type="text" id="chat-msg" placeholder="Scrivi un messaggio...">
+    <div class="app-layout">
+        <nav class="sidebar">
+            <ul class="nav-list">
+                <li onclick="app.showSec('all')"><i class="fa fa-home"></i> Home</li>
+                <li class="label">CATEGORIE</li>
+                <li onclick="app.showSec('cat', 'film')">Film</li>
+                <li onclick="app.showSec('cat', 'musica')">Musica</li>
+                <li class="label">PERSONALE</li>
+                <li onclick="app.showSec('likes')">I miei Like</li>
+                <li onclick="app.showSec('mine')">I miei Download</li>
+                <li class="label">SISTEMA</li>
+                <li onclick="app.openModal('chat-modal')">Chat & Allegati</li>
+                <li onclick="app.openModal('settings-modal')">Impostazioni</li>
+            </ul>
+
+            <div class="adv-box">
+                <p>PUBBLICITÀ</p>
+                <small>Noleggia qui:</small><br>
+                <a href="mailto:dome0082@gmail.com">dome0082@gmail.com</a>
+            </div>
+        </nav>
+
+        <main class="content">
+            <div class="upload-area">
+                <div class="up-row">
+                    <input type="text" id="up-title" placeholder="Titolo del file...">
+                    <input type="file" id="up-file">
+                    <button onclick="app.upload()" class="btn-red">CARICA</button>
+                </div>
+                <div id="p-wrap" class="p-wrap" style="display:none;">
+                    <div id="p-bar" class="p-bar">0%</div>
+                </div>
+            </div>
+
+            <div id="grid" class="grid"></div>
+        </main>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <h3>Impostazioni Account</h3>
+            <p>Email: <span id="u-mail"></span></p>
+            <input type="password" placeholder="Nuova Password">
+            <hr>
+            <h3>Qualità Video</h3>
+            <select id="set-res">
+                <option>720p</option>
+                <option>1080p (FHD)</option>
+            </select>
+            <h3>Audio</h3>
+            <select id="set-audio">
+                <option>Stereo</option>
+                <option>Surround 5.1</option>
+            </select>
+            <button onclick="app.closeModal('settings-modal')" class="btn-close">Chiudi</button>
+        </div>
+    </div>
+
+    <div id="chat-modal" class="modal">
+        <div class="modal-content chat-modal-size">
+            <div id="chat-msgs" class="chat-msgs"></div>
+            <div class="chat-footer">
+                <input type="text" id="chat-input" placeholder="Messaggio...">
                 <button onclick="app.sendChat()">Invia</button>
             </div>
+            <button onclick="app.closeModal('chat-modal')" class="btn-close">Esci</button>
         </div>
     </div>
 

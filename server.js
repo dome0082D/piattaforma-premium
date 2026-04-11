@@ -29,22 +29,30 @@ const Chat = mongoose.model('Chat', new mongoose.Schema({
   user: String, msg: String, data: { type: Date, default: Date.now }
 }));
 
-mongoose.connect(process.env.MONGO_URI).then(() => console.log('✅ DB Connesso'));
+mongoose.connect(process.env.MONGO_URI).then(() => console.log('✅ Connesso al Database xxxD'));
 
-// --- API ---
-
-// Upload con Resource Type Auto per accettare ogni file
+// API Caricamento
 appServer.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
-    const result = await cloudinary.uploader.upload(req.file.path, { resource_type: 'auto', folder: 'xxxd' });
+    const result = await cloudinary.uploader.upload(req.file.path, { 
+        resource_type: 'auto', 
+        folder: 'xxxd_vault' 
+    });
     const nuovo = new Media({
-      titolo: req.body.titolo, url: result.secure_url, public_id: result.public_id,
-      tipo: result.resource_type, owner: req.body.owner, categoria: req.body.categoria || 'all'
+      titolo: req.body.titolo || "Senza titolo",
+      url: result.secure_url,
+      public_id: result.public_id,
+      tipo: result.resource_type,
+      owner: req.body.owner,
+      categoria: req.body.categoria || 'all'
     });
     await nuovo.save();
     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
     res.json(nuovo);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) { 
+    console.error(err);
+    res.status(500).json({ error: "Errore Cloudinary" }); 
+  }
 });
 
 appServer.get('/api/media', async (req, res) => {
@@ -52,28 +60,31 @@ appServer.get('/api/media', async (req, res) => {
   res.json(media);
 });
 
-// FUNZIONE LIKE (Risolve l'errore app.like)
 appServer.post('/api/media/:id/like', async (req, res) => {
   const item = await Media.findById(req.params.id);
   const { user } = req.body;
-  if (!item.likes.includes(user)) {
-    item.likes.push(user);
-  } else {
-    item.likes = item.likes.filter(u => u !== user);
-  }
+  item.likes.includes(user) ? item.likes = item.likes.filter(u => u !== user) : item.likes.push(user);
   await item.save();
   res.json(item);
 });
 
+appServer.delete('/api/media/:id', async (req, res) => {
+  const item = await Media.findById(req.params.id);
+  if (item) await cloudinary.uploader.destroy(item.public_id, { resource_type: item.tipo });
+  await Media.findByIdAndDelete(req.params.id);
+  res.json({ ok: true });
+});
+
+// Chat API
 appServer.post('/api/chat', async (req, res) => {
   const m = new Chat(req.body); await m.save(); res.json(m);
 });
 
 appServer.get('/api/chat', async (req, res) => {
-  const messaggi = await Chat.find().sort({ data: -1 }).limit(50);
-  res.json(messaggi);
+  const msgs = await Chat.find().sort({ data: -1 }).limit(30);
+  res.json(msgs);
 });
 
-// FIX PORTA RENDER (Risolve Errore 502)
+// FIX PORTA PER RENDER
 const PORT = process.env.PORT || 10000;
-appServer.listen(PORT, '0.0.0.0', () => console.log(`🚀 Porta ${PORT}`));
+appServer.listen(PORT, '0.0.0.0', () => console.log(`🚀 Vault Attivo su porta ${PORT}`));

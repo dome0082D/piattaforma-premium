@@ -1,84 +1,88 @@
 const app = {
-    user: localStorage.getItem('user') || 'utente_' + Math.floor(Math.random()*1000),
-    
+    user: localStorage.getItem('user') || 'User_' + Math.floor(Math.random()*999),
+    allMedia: [],
+
     upload: function() {
         const file = document.getElementById('up-file').files[0];
         const title = document.getElementById('up-title').value;
-        if(!file) return alert("Seleziona un file!");
+        if(!file) return alert("Scegli un file prima!");
 
         const fd = new FormData();
         fd.append('file', file);
         fd.append('titolo', title);
         fd.append('owner', this.user);
 
-        const pCont = document.getElementById('p-cont');
+        const pWrap = document.getElementById('p-wrap');
         const pBar = document.getElementById('p-bar');
-        pCont.style.display = 'block';
+        pWrap.style.display = 'block';
 
         const xhr = new XMLHttpRequest();
         xhr.upload.onprogress = (e) => {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            pBar.style.width = percent + '%';
-            pBar.innerText = percent + '%';
+            const p = Math.round((e.loaded / e.total) * 100);
+            pBar.style.width = p + '%';
+            pBar.innerText = p + '%';
         };
 
         xhr.onload = () => {
-            alert("Caricato con successo!");
-            location.reload();
+            if(xhr.status === 200) {
+                alert("File caricato nel vault!");
+                location.reload();
+            } else {
+                alert("Errore Server. Controlla Render.");
+                pWrap.style.display = 'none';
+            }
         };
         xhr.open('POST', '/api/upload');
         xhr.send(fd);
     },
 
-    loadMedia: async function(filter = 'all') {
+    load: async function() {
         const res = await fetch('/api/media');
-        const data = await res.json();
-        const gallery = document.getElementById('gallery');
-        gallery.innerHTML = '';
-
-        data.forEach(item => {
-            if(filter !== 'all' && item.tipo !== filter) return;
-
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `
-                ${item.tipo === 'video' ? `<video src="${item.url}" controls></video>` : `<img src="${item.url}">`}
-                <h4>${item.titolo}</h4>
-                <button onclick="app.like('${item._id}')">❤️ ${item.likes.length}</button>
-            `;
-            gallery.appendChild(card);
-        });
+        this.allMedia = await res.json();
+        this.render(this.allMedia);
     },
 
-    like: async function(id) {
-        await fetch(`/api/media/${id}/like`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ user: this.user })
-        });
-        this.loadMedia();
+    render: function(data) {
+        const grid = document.getElementById('grid');
+        grid.innerHTML = data.map(item => `
+            <div class="card">
+                ${item.tipo === 'video' 
+                    ? `<video src="${item.url}" muted loop onmouseover="this.play()" onmouseout="this.pause()"></video>` 
+                    : `<img src="${item.url}" alt="anteprima">`}
+                <div class="card-info">
+                    <span>${item.titolo}</span>
+                    <div class="actions">
+                        <i class="fa fa-heart" onclick="app.like('${item._id}')" style="cursor:pointer"></i> ${item.likes.length}
+                        <i class="fa fa-trash" onclick="app.delete('${item._id}')" style="margin-left:15px; cursor:pointer; color:#ff4444"></i>
+                    </div>
+                </div>
+            </div>
+        `).join('');
     },
 
-    sendChat: async function() {
-        const msg = document.getElementById('chat-msg').value;
-        await fetch('/api/chat', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ user: this.user, msg })
-        });
-        document.getElementById('chat-msg').value = '';
-        this.loadChat();
+    search: function() {
+        const query = document.getElementById('search-input').value.toLowerCase();
+        const filtered = this.allMedia.filter(m => m.titolo.toLowerCase().includes(query));
+        this.render(filtered);
     },
 
-    loadChat: async function() {
-        const res = await fetch('/api/chat');
-        const data = await res.json();
-        const box = document.getElementById('chat-box');
-        box.innerHTML = data.map(m => `<p><b>${m.user}:</b> ${m.msg}</p>`).join('');
-    }
+    updateVisual: function() {
+        const b = document.getElementById('range-bright').value;
+        const v = document.getElementById('range-vol').value / 100;
+        document.getElementById('v-body').style.filter = `brightness(${b}%)`;
+        document.querySelectorAll('video').forEach(vid => vid.volume = v);
+    },
+
+    showSec: function(mode, val) {
+        if(mode === 'all') this.render(this.allMedia);
+        if(mode === 'cat') this.render(this.allMedia.filter(m => m.categoria === val));
+        if(mode === 'likes') this.render(this.allMedia.filter(m => m.likes.includes(this.user)));
+        if(mode === 'mine') this.render(this.allMedia.filter(m => m.owner === this.user));
+    },
+
+    openModal: (id) => document.getElementById(id).style.display = 'block',
+    closeModal: (id) => document.getElementById(id).style.display = 'none'
 };
 
-// Inizializzazione
-app.loadMedia();
-app.loadChat();
-setInterval(() => app.loadChat(), 3000);
+// Avvio
+window.onload = () => app.load();
