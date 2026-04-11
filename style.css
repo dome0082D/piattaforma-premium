@@ -1,27 +1,14 @@
-body { background: white; margin: 0; font-family: 'Arial', sans-serif; transition: 0.3s; }
-#login-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.logo-giant { font-size: 100px; color: red; margin: 0; font-weight: 900; }
-.login-card { background: black; padding: 30px; border-radius: 15px; display: flex; flex-direction: column; gap: 10px; }
-.btn-red { background: red; color: white; border: none; padding: 10px; cursor: pointer; font-weight: bold; }
-.btn-dark { background: #333; color: white; border: none; padding: 10px; cursor: pointer; }
+body { margin: 0; font-family: sans-serif; background: #111; color: white; display: flex; }
+.sidebar { width: 200px; background: #000; height: 100vh; padding: 20px; position: fixed; }
+.main { margin-left: 240px; padding: 20px; width: calc(100% - 260px); }
 
-header { background: black; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 10; }
-.dome-text { font-size: 12px; color: white; }
-.xxxd-text { font-size: 24px; color: red; font-weight: bold; }
+/* CHAT PIÙ GRANDE */
+.chat-container { margin-top: 50px; background: #222; padding: 20px; border-radius: 10px; width: 100%; max-width: 800px; }
+.chat-box { height: 400px; overflow-y: auto; background: #000; padding: 10px; margin-bottom: 10px; }
 
-.sidebar { width: 220px; background: #f4f4f4; height: 100vh; position: fixed; border-right: 1px solid #ddd; padding: 15px; box-sizing: border-box; }
-.nav-links { list-style: none; padding: 0; }
-.nav-links li { padding: 10px; cursor: pointer; font-weight: bold; border-bottom: 1px solid #eee; }
-.nav-links li:hover { color: red; }
-.nav-label { font-size: 11px; color: #999; margin-top: 15px; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+.card { background: #222; padding: 10px; border-radius: 8px; }
+video, img { width: 100%; border-radius: 5px; }
 
-main { margin-left: 240px; padding: 20px; }
-.video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-.video-card { background: black; border-radius: 10px; overflow: hidden; color: white; position: relative; }
-video { width: 100%; height: 180px; display: block; }
-.card-info { padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-
-.modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; }
-.modal-content { background: white; width: 400px; margin: 50px auto; padding: 20px; border-radius: 10px; }
-.adv-banner { margin-top: 30px; border: 2px dashed red; padding: 10px; text-align: center; font-size: 12px; }
-.online-box { margin-top: 20px; font-size: 12px; font-weight: bold; color: green; }
+/* BARRA CARICAMENTO */
+#p-cont { border-radius: 10px; overflow: hidden; }

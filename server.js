@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const cloudinary = require('cloudinary').v2;
 const multer = require('multer');
 const cors = require('cors');
-const path = require('path');
 const fs = require('fs');
 
 const appServer = express();
@@ -12,7 +11,6 @@ appServer.use(cors());
 appServer.use(express.json());
 appServer.use(express.static(__dirname));
 
-// Configurazione Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -21,110 +19,54 @@ cloudinary.config({
 
 const upload = multer({ dest: 'uploads/' });
 
-// SCHEMI DATABASE
-// Media: supporta Video, Foto e Documenti grazie a resource_type: 'auto'
 const Media = mongoose.model('Media', new mongoose.Schema({
-  titolo: String,
-  url: String,
-  public_id: String,
-  tipo: String, // video, image, raw
-  owner: String,
-  categoria: { type: String, default: 'all' },
-  likes: { type: Array, default: [] },
-  data: { type: Date, default: Date.now }
+  titolo: String, url: String, public_id: String, tipo: String,
+  owner: String, categoria: { type: String, default: 'all' },
+  likes: { type: Array, default: [] }, data: { type: Date, default: Date.now }
 }));
 
-// Chat e Allegati
 const Chat = mongoose.model('Chat', new mongoose.Schema({
-  user: String,
-  msg: String,
-  fileUrl: String,
-  data: { type: Date, default: Date.now }
+  user: String, msg: String, data: { type: Date, default: Date.now }
 }));
 
-// Stato Utenti Online
-const UserStatus = mongoose.model('UserStatus', new mongoose.Schema({
-  email: { type: String, unique: true },
-  lastSeen: { type: Date, default: Date.now }
-}));
+mongoose.connect(process.env.MONGO_URI).then(() => console.log('✅ DB Connesso'));
 
-// CONNESSIONE DB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('✅ Connesso al Database xxxD'))
-  .catch(err => console.error('❌ Errore DB:', err));
+// --- API ---
 
-// --- ROTTE API ---
-
-// 1. Upload File (Qualsiasi tipo)
+// Upload con Resource Type Auto per accettare ogni file
 appServer.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
-    // resource_type: 'auto' permette di caricare video, pdf, immagini, ecc.
-    const result = await cloudinary.uploader.upload(req.file.path, { 
-      resource_type: 'auto',
-      folder: 'xxxd_vault'
+    const result = await cloudinary.uploader.upload(req.file.path, { resource_type: 'auto', folder: 'xxxd' });
+    const nuovo = new Media({
+      titolo: req.body.titolo, url: result.secure_url, public_id: result.public_id,
+      tipo: result.resource_type, owner: req.body.owner, categoria: req.body.categoria || 'all'
     });
-    
-    const nuovoMedia = new Media({
-      titolo: req.body.titolo,
-      url: result.secure_url,
-      public_id: result.public_id,
-      tipo: result.resource_type,
-      owner: req.body.owner,
-      categoria: req.body.categoria || 'all'
-    });
-
-    await nuovoMedia.save();
+    await nuovo.save();
     if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-    res.json(nuovoMedia);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json(nuovo);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 2. Recupero Media
 appServer.get('/api/media', async (req, res) => {
   const media = await Media.find().sort({ data: -1 });
   res.json(media);
 });
 
-// 3. Cancellazione (Solo se non anonimo gestito lato client)
-appServer.delete('/api/media/:id', async (req, res) => {
-  try {
-    const item = await Media.findById(req.params.id);
-    if (item && item.public_id) {
-      await cloudinary.uploader.destroy(item.public_id, { resource_type: item.tipo });
-    }
-    await Media.findByIdAndDelete(req.params.id);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+// FUNZIONE LIKE (Risolve l'errore app.like)
+appServer.post('/api/media/:id/like', async (req, res) => {
+  const item = await Media.findById(req.params.id);
+  const { user } = req.body;
+  if (!item.likes.includes(user)) {
+    item.likes.push(user);
+  } else {
+    item.likes = item.likes.filter(u => u !== user);
   }
+  await item.save();
+  res.json(item);
 });
 
-// 4. Gestione Online (Ping)
-appServer.post('/api/ping', async (req, res) => {
-  const { email } = req.body;
-  if (email && email !== 'anonimo') {
-    await UserStatus.findOneAndUpdate(
-      { email }, 
-      { lastSeen: new Date() }, 
-      { upsert: true }
-    );
-  }
-  res.json({ ok: true });
-});
-
-appServer.get('/api/online', async (req, res) => {
-  const threshold = new Date(Date.now() - 2 * 60 * 1000); // 2 minuti
-  const onlineUsers = await UserStatus.find({ lastSeen: { $gte: threshold } });
-  res.json(onlineUsers);
-});
-
-// 5. Chat
 appServer.post('/api/chat', async (req, res) => {
-  const msg = new Chat(req.body);
-  await msg.save();
-  res.json(msg);
+  const m = new Chat(req.body); await m.save(); res.json(m);
 });
 
 appServer.get('/api/chat', async (req, res) => {
@@ -132,15 +74,6 @@ appServer.get('/api/chat', async (req, res) => {
   res.json(messaggi);
 });
 
-// Avvio Server - Correzione fondamentale per Render
+// FIX PORTA RENDER (Risolve Errore 502)
 const PORT = process.env.PORT || 10000;
-
-// Importante: ascolta su 0.0.0.0 per essere visibile esternamente su Render
-appServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server attivo sulla porta ${PORT}`);
-});
-
-// Gestione degli errori del server per evitare crash improvvisi
-appServer.on('error', (err) => {
-    console.error('Server error:', err);
-});
+appServer.listen(PORT, '0.0.0.0', () => console.log(`🚀 Porta ${PORT}`));

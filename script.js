@@ -1,113 +1,84 @@
 const app = {
-    user: localStorage.getItem('user'),
-    data: [],
-
-    login: function(tipo) {
-        const email = document.getElementById('email').value;
-        if (tipo === 'anonimo') {
-            localStorage.setItem('user', 'anonimo');
-        } else if (email) {
-            localStorage.setItem('user', email);
-        } else {
-            return alert("Inserisci email o entra come anonimo");
-        }
-        location.reload();
-    },
-
-    init: async function() {
-        if (!this.user) return;
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app-content').style.display = 'block';
-        document.getElementById('user-email').innerText = this.user;
-
-        if (this.user === 'anonimo') {
-            document.getElementById('upload-zone').style.display = 'none';
-        }
-
-        this.loadMedia();
-        this.updateOnline();
-        setInterval(() => this.updateOnline(), 10000);
-    },
-
-    loadMedia: async function() {
-        const res = await fetch('/api/media');
-        this.data = await res.json();
-        this.render(this.data);
-    },
-
-    render: function(list) {
-        const grid = document.getElementById('video-grid');
-        grid.innerHTML = list.map(item => `
-            <div class="video-card">
-                <video src="${item.url}" onmouseover="this.play()" onmouseout="this.pause()" controls muted></video>
-                <div class="card-info">
-                    <span>${item.titolo}</span>
-                    <div>
-                        <i class="fa fa-heart" onclick="app.like('${item._id}')"></i>
-                        ${this.user !== 'anonimo' ? `<i class="fa fa-trash" style="margin-left:10px" onclick="app.delete('${item._id}')"></i>` : ''}
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    },
-
+    user: localStorage.getItem('user') || 'utente_' + Math.floor(Math.random()*1000),
+    
     upload: function() {
         const file = document.getElementById('up-file').files[0];
         const title = document.getElementById('up-title').value;
-        if (!file) return;
+        if(!file) return alert("Seleziona un file!");
 
         const fd = new FormData();
         fd.append('file', file);
-        fd.append('titolo', title || 'Senza titolo');
+        fd.append('titolo', title);
         fd.append('owner', this.user);
 
+        const pCont = document.getElementById('p-cont');
+        const pBar = document.getElementById('p-bar');
+        pCont.style.display = 'block';
+
         const xhr = new XMLHttpRequest();
-        document.getElementById('p-cont').style.display = 'block';
         xhr.upload.onprogress = (e) => {
-            const p = Math.round((e.loaded / e.total) * 100);
-            document.getElementById('p-bar').style.width = p + '%';
+            const percent = Math.round((e.loaded / e.total) * 100);
+            pBar.style.width = percent + '%';
+            pBar.innerText = percent + '%';
         };
-        xhr.onload = () => location.reload();
+
+        xhr.onload = () => {
+            alert("Caricato con successo!");
+            location.reload();
+        };
         xhr.open('POST', '/api/upload');
         xhr.send(fd);
     },
 
-    delete: async function(id) {
-        if (confirm("Vuoi cancellare questo file?")) {
-            await fetch(`/api/media/${id}`, { method: 'DELETE' });
-            this.loadMedia();
-        }
+    loadMedia: async function(filter = 'all') {
+        const res = await fetch('/api/media');
+        const data = await res.json();
+        const gallery = document.getElementById('gallery');
+        gallery.innerHTML = '';
+
+        data.forEach(item => {
+            if(filter !== 'all' && item.tipo !== filter) return;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                ${item.tipo === 'video' ? `<video src="${item.url}" controls></video>` : `<img src="${item.url}">`}
+                <h4>${item.titolo}</h4>
+                <button onclick="app.like('${item._id}')">❤️ ${item.likes.length}</button>
+            `;
+            gallery.appendChild(card);
+        });
     },
 
-    updateStyle: function() {
-        const b = document.getElementById('bright-range').value;
-        document.body.style.filter = `brightness(${b}%)`;
-        // Il volume viene gestito dai video individualmente tramite querySelector
-        const v = document.getElementById('vol-range').value / 100;
-        document.querySelectorAll('video').forEach(vid => vid.volume = v);
+    like: async function(id) {
+        await fetch(`/api/media/${id}/like`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user: this.user })
+        });
+        this.loadMedia();
     },
 
-    search: function() {
-        const val = document.getElementById('search').value.toLowerCase();
-        const filtered = this.data.filter(i => i.titolo.toLowerCase().includes(val));
-        this.render(filtered);
+    sendChat: async function() {
+        const msg = document.getElementById('chat-msg').value;
+        await fetch('/api/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user: this.user, msg })
+        });
+        document.getElementById('chat-msg').value = '';
+        this.loadChat();
     },
 
-    updateOnline: async function() {
-        // Simulazione online o chiamata a /api/online se implementata nel server
-        document.getElementById('online-list').innerHTML = `● ${this.user.split('@')[0]} (Tu)<br>● Admin`;
-    },
-
-    showSec: function(mode, val) {
-        if (mode === 'all') this.render(this.data);
-        if (mode === 'mine') this.render(this.data.filter(i => i.owner === this.user));
-        if (mode === 'cat') this.render(this.data.filter(i => i.categoria === val));
-    },
-
-    toggleModal: function(id) {
-        const m = document.getElementById(id);
-        m.style.display = m.style.display === 'block' ? 'none' : 'block';
+    loadChat: async function() {
+        const res = await fetch('/api/chat');
+        const data = await res.json();
+        const box = document.getElementById('chat-box');
+        box.innerHTML = data.map(m => `<p><b>${m.user}:</b> ${m.msg}</p>`).join('');
     }
 };
 
-window.onload = () => app.init();
+// Inizializzazione
+app.loadMedia();
+app.loadChat();
+setInterval(() => app.loadChat(), 3000);
