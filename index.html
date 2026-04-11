@@ -2,56 +2,103 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>xxxD - Premium Vault</title>
+    <title>xxxD - Private Vault</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body id="v-body">
-    <header>
-        <div class="logo">dome <span class="red">xxxD</span></div>
-        <div class="search-box">
-            <input type="text" id="search-input" placeholder="Cerca file..." onkeyup="app.search()">
-            <i class="fa fa-search"></i>
-        </div>
-        <div class="controls">
-            <i class="fa fa-sun"></i> <input type="range" id="bright" min="30" max="100" value="100" oninput="app.updateVisual()">
-            <i class="fa fa-volume-up"></i> <input type="range" id="vol" min="0" max="100" value="80" oninput="app.updateVisual()">
-        </div>
-    </header>
+<body>
 
-    <div class="layout">
-        <nav class="sidebar">
-            <div onclick="app.load()"><i class="fa fa-home"></i> Home</div>
-            <div class="label">CATEGORIE</div>
-            <div>Film</div>
-            <div>Musica</div>
-            <div class="label">PERSONALE</div>
-            <div onclick="app.showLikes()"><i class="fa fa-heart"></i> I miei Like</div>
-            <div onclick="app.openChat()"><i class="fa fa-comments"></i> Chat & Allegati</div>
-        </nav>
+    <div class="watermark">xxxD</div>
 
-        <main class="content">
-            <div class="up-bar">
-                <input type="text" id="up-title" placeholder="Titolo file...">
-                <input type="file" id="up-file">
-                <button onclick="app.upload()">CARICA</button>
-                <div id="p-wrap" class="p-wrap" style="display:none;">
-                    <div id="p-bar" class="p-bar">0%</div>
-                </div>
-            </div>
-            <div id="grid" class="grid"></div>
-        </main>
+    <div id="login-view" class="auth-box">
+        <h2>xxxD Vault</h2>
+        <input type="email" id="log-email" placeholder="Email">
+        <input type="password" id="log-pass" placeholder="Password">
+        <button onclick="app.login()">Accedi</button>
+        <button onclick="app.register()" class="btn-sec">Registrati</button>
     </div>
 
-    <div id="chat-modal" class="modal">
-        <div class="chat-content">
-            <h3>Vault Chat</h3>
-            <div id="chat-list" class="chat-list"></div>
-            <div class="chat-footer">
-                <input type="text" id="chat-i" placeholder="Messaggio...">
-                <button onclick="app.sendChat()">Invia</button>
+    <div id="app-view" style="display:none;">
+        <header>
+            <div class="logo" onclick="app.loadMedia()">xxxD</div>
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Cerca..." onkeyup="app.search()">
+                <select id="filter-type" onchange="app.search()">
+                    <option value="all">Tutti</option>
+                    <option value="video">Video</option>
+                    <option value="image">Immagini</option>
+                    <option value="audio">Audio</option>
+                    <option value="raw">Documenti</option>
+                </select>
+                <i class="fa fa-search"></i>
             </div>
-            <button class="btn-close" onclick="app.closeChat()">Esci</button>
+        </header>
+
+        <div class="layout">
+            <nav class="sidebar">
+                <div class="menu-item" onclick="app.loadMedia()"><i class="fa fa-home"></i> Home</div>
+                <div class="menu-item" onclick="app.showLikes()"><i class="fa fa-heart"></i> I miei Like</div>
+                <div class="menu-item" onclick="app.showMine()"><i class="fa fa-folder-open"></i> I miei Download</div>
+                <div class="menu-item" onclick="app.openModal('settings-modal')"><i class="fa fa-cog"></i> Impostazioni</div>
+                
+                <div class="ad-banner">
+                    <p>PUBBLICITÀ</p>
+                    <small>Contatta per info:</small><br>
+                    <a href="mailto:dome0082@gmail.com">dome0082@gmail.com</a>
+                </div>
+            </nav>
+
+            <main class="content">
+                <div class="upload-zone">
+                    <input type="text" id="up-title" placeholder="Nome File...">
+                    <input type="file" id="up-file">
+                    <button onclick="app.upload()">Carica nel Vault</button>
+                    <div id="p-wrap" class="p-wrap" style="display:none;"><div id="p-bar" class="p-bar">0%</div></div>
+                </div>
+                <div id="grid" class="grid"></div>
+            </main>
+
+            <aside class="chat-sidebar">
+                <h3>Vault Chat</h3>
+                <div id="chat-box" class="chat-box"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-msg" placeholder="Messaggio...">
+                    <button onclick="app.sendChat()"><i class="fa fa-paper-plane"></i></button>
+                </div>
+            </aside>
+        </div>
+
+        <div class="online-box">
+            <h4><i class="fa fa-users"></i> Online</h4>
+            <div id="online-list"></div>
+        </div>
+
+        <div id="player-modal" class="modal player-modal">
+            <div class="player-content">
+                <button class="close-btn" onclick="app.closeModal('player-modal'); app.stopPlayer()">X</button>
+                <div id="media-container"></div>
+                <div class="player-controls">
+                    <button onclick="app.playerAction('prev')"><i class="fa fa-step-backward"></i></button>
+                    <button onclick="app.playerAction('play')"><i class="fa fa-play"></i></button>
+                    <button onclick="app.playerAction('pause')"><i class="fa fa-pause"></i></button>
+                    <button onclick="app.playerAction('stop')"><i class="fa fa-stop"></i></button>
+                    <button onclick="app.playerAction('next')"><i class="fa fa-step-forward"></i></button>
+                    <button onclick="app.playerAction('fullscreen')"><i class="fa fa-expand"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <div id="settings-modal" class="modal">
+            <div class="settings-content">
+                <h3>Impostazioni Riproduzione</h3>
+                <label>Qualità Video:
+                    <select><option>1080p</option><option>720p</option></select>
+                </label><br><br>
+                <label>Qualità Audio:
+                    <select><option>Dolby / Surround</option><option>Stereo</option></select>
+                </label><br><br>
+                <button onclick="app.closeModal('settings-modal')" style="width:100%">Salva e Chiudi</button>
+            </div>
         </div>
     </div>
 
