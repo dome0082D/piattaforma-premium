@@ -132,7 +132,15 @@ appServer.get('/api/chat', async (req, res) => {
   res.json(messaggi);
 });
 
-// Avvio Server
+// Avvio Server - Correzione fondamentale per Render
 const PORT = process.env.PORT || 10000;
-appServer.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-appServer.listen(PORT, () => console.log(`🚀 Server attivo su porta ${PORT}`));
+
+// Importante: ascolta su 0.0.0.0 per essere visibile esternamente su Render
+appServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server attivo sulla porta ${PORT}`);
+});
+
+// Gestione degli errori del server per evitare crash improvvisi
+appServer.on('error', (err) => {
+    console.error('Server error:', err);
+});
