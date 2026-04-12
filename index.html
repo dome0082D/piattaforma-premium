@@ -2,103 +2,98 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>xxxD - Private Vault</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>xxxD Vault</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-
     <div class="watermark">xxxD</div>
 
-    <div id="login-view" class="auth-box">
-        <h2>xxxD Vault</h2>
-        <input type="email" id="log-email" placeholder="Email">
-        <input type="password" id="log-pass" placeholder="Password">
-        <button onclick="app.login()">Accedi</button>
-        <button onclick="app.register()" class="btn-sec">Registrati</button>
+    <div id="login-view" class="auth-container">
+        <div class="auth-card">
+            <h1>xxxD</h1>
+            <input type="email" id="log-email" placeholder="Email">
+            <input type="password" id="log-pass" placeholder="Password">
+            <button onclick="app.login()">ACCEDI</button>
+            <button onclick="app.register()" class="btn-reg">REGISTRATI</button>
+        </div>
     </div>
 
-    <div id="app-view" style="display:none;">
+    <div id="main-view" style="display:none;">
         <header>
-            <div class="logo" onclick="app.loadMedia()">xxxD</div>
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="Cerca..." onkeyup="app.search()">
-                <select id="filter-type" onchange="app.search()">
-                    <option value="all">Tutti</option>
-                    <option value="video">Video</option>
-                    <option value="image">Immagini</option>
-                    <option value="audio">Audio</option>
-                    <option value="raw">Documenti</option>
-                </select>
-                <i class="fa fa-search"></i>
+            <div class="top-logo" onclick="location.reload()">xxxD</div>
+            <div class="search-engine">
+                <div class="search-bar">
+                    <input type="text" id="q" placeholder="Cerca file..." onkeyup="app.search()">
+                    <i class="fa fa-search"></i>
+                </div>
+                <div class="search-filters">
+                    <button onclick="app.filter('video')">Video</button>
+                    <button onclick="app.filter('image')">Foto</button>
+                    <button onclick="app.filter('audio')">Audio</button>
+                    <button onclick="app.filter('raw')">Doc</button>
+                </div>
             </div>
+            <button class="logout-ico" onclick="app.logout()"><i class="fa fa-power-off"></i></button>
         </header>
 
-        <div class="layout">
-            <nav class="sidebar">
-                <div class="menu-item" onclick="app.loadMedia()"><i class="fa fa-home"></i> Home</div>
-                <div class="menu-item" onclick="app.showLikes()"><i class="fa fa-heart"></i> I miei Like</div>
-                <div class="menu-item" onclick="app.showMine()"><i class="fa fa-folder-open"></i> I miei Download</div>
-                <div class="menu-item" onclick="app.openModal('settings-modal')"><i class="fa fa-cog"></i> Impostazioni</div>
+        <div class="app-body">
+            <nav class="side-nav">
+                <div class="nav-item" onclick="app.loadHome()"><i class="fa fa-home"></i> Home</div>
+                <div class="nav-item" onclick="app.showLikes()"><i class="fa fa-heart"></i> Like</div>
+                <div class="nav-item" onclick="app.showMine()"><i class="fa fa-folder"></i> Caricati</div>
+                <div class="nav-item" onclick="app.modal('settings')"><i class="fa fa-sliders"></i> Impostazioni</div>
                 
                 <div class="ad-banner">
-                    <p>PUBBLICITÀ</p>
-                    <small>Contatta per info:</small><br>
+                    <small>ADV SPACE</small><br>
                     <a href="mailto:dome0082@gmail.com">dome0082@gmail.com</a>
                 </div>
             </nav>
 
-            <main class="content">
+            <main class="viewport">
                 <div class="upload-zone">
-                    <input type="text" id="up-title" placeholder="Nome File...">
+                    <input type="text" id="up-name" placeholder="Nome file...">
                     <input type="file" id="up-file">
-                    <button onclick="app.upload()">Carica nel Vault</button>
-                    <div id="p-wrap" class="p-wrap" style="display:none;"><div id="p-bar" class="p-bar">0%</div></div>
+                    <button onclick="app.upload()">UPLOAD</button>
+                    <div id="p-wrap" class="p-wrap" style="display:none"><div id="p-bar">0%</div></div>
                 </div>
                 <div id="grid" class="grid"></div>
             </main>
 
-            <aside class="chat-sidebar">
-                <h3>Vault Chat</h3>
-                <div id="chat-box" class="chat-box"></div>
-                <div class="chat-input-area">
-                    <input type="text" id="chat-msg" placeholder="Messaggio...">
-                    <button onclick="app.sendChat()"><i class="fa fa-paper-plane"></i></button>
+            <aside class="chat-panel">
+                <div class="chat-list" id="chat-box"></div>
+                <div class="chat-ctrl">
+                    <input type="text" id="chat-in" placeholder="Messaggio...">
+                    <button onclick="app.sendChat()"><i class="fa fa-send"></i></button>
                 </div>
             </aside>
         </div>
 
-        <div class="online-box">
-            <h4><i class="fa fa-users"></i> Online</h4>
-            <div id="online-list"></div>
-        </div>
+        <div class="online-box" id="online-ui"></div>
+    </div>
 
-        <div id="player-modal" class="modal player-modal">
-            <div class="player-content">
-                <button class="close-btn" onclick="app.closeModal('player-modal'); app.stopPlayer()">X</button>
-                <div id="media-container"></div>
-                <div class="player-controls">
-                    <button onclick="app.playerAction('prev')"><i class="fa fa-step-backward"></i></button>
-                    <button onclick="app.playerAction('play')"><i class="fa fa-play"></i></button>
-                    <button onclick="app.playerAction('pause')"><i class="fa fa-pause"></i></button>
-                    <button onclick="app.playerAction('stop')"><i class="fa fa-stop"></i></button>
-                    <button onclick="app.playerAction('next')"><i class="fa fa-step-forward"></i></button>
-                    <button onclick="app.playerAction('fullscreen')"><i class="fa fa-expand"></i></button>
-                </div>
+    <div id="modal-player" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="app.closePlayer()">&times;</span>
+            <div id="player-render"></div>
+            <div class="player-buttons">
+                <button onclick="app.pCtrl('prev')"><i class="fa fa-step-backward"></i></button>
+                <button onclick="app.pCtrl('play')"><i class="fa fa-play"></i></button>
+                <button onclick="app.pCtrl('pause')"><i class="fa fa-pause"></i></button>
+                <button onclick="app.pCtrl('stop')"><i class="fa fa-stop"></i></button>
+                <button onclick="app.pCtrl('next')"><i class="fa fa-step-forward"></i></button>
+                <button onclick="app.pCtrl('full')"><i class="fa fa-expand"></i></button>
             </div>
         </div>
+    </div>
 
-        <div id="settings-modal" class="modal">
-            <div class="settings-content">
-                <h3>Impostazioni Riproduzione</h3>
-                <label>Qualità Video:
-                    <select><option>1080p</option><option>720p</option></select>
-                </label><br><br>
-                <label>Qualità Audio:
-                    <select><option>Dolby / Surround</option><option>Stereo</option></select>
-                </label><br><br>
-                <button onclick="app.closeModal('settings-modal')" style="width:100%">Salva e Chiudi</button>
-            </div>
+    <div id="modal-settings" class="modal">
+        <div class="modal-content setting-card">
+            <h3>Parametri Sistema</h3>
+            <p>Video: <select><option>1080p Ultra</option><option>720p HD</option></select></p>
+            <p>Audio: <select><option>Dolby Digital</option><option>Stereo</option></select></p>
+            <button onclick="app.closeModal('settings')">Salva</button>
         </div>
     </div>
 
