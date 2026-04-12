@@ -2,82 +2,121 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>xxxD Vault</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xxxD</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <div class="watermark">xxxD</div>
+    <div class="watermark-bg">xxxD</div>
 
-    <div id="login-view" class="auth-container">
-        <div class="auth-card">
-            <h1>xxxD</h1>
-            <input type="email" id="log-email" placeholder="Email">
-            <input type="password" id="log-pass" placeholder="Password">
-            <button onclick="app.login()">ACCEDI</button>
-            <button onclick="app.register()" class="btn-reg">REGISTRATI</button>
+    <header>
+        <div class="header-left">
+            <div id="clock-display" class="clock"></div>
+            <div class="logo-red" onclick="location.reload()">xxxD</div>
         </div>
-    </div>
-
-    <div id="main-view" style="display:none;">
-        <header>
-            <div class="top-logo" onclick="location.reload()">xxxD</div>
-            <div class="search-engine">
-                <div class="search-bar">
-                    <input type="text" id="q" placeholder="Cerca file..." onkeyup="app.search()">
-                    <i class="fa fa-search"></i>
-                </div>
-                <div class="search-filters">
-                    <button onclick="app.filter('video')">Video</button>
-                    <button onclick="app.filter('image')">Foto</button>
-                    <button onclick="app.filter('audio')">Audio</button>
-                    <button onclick="app.filter('raw')">Doc</button>
-                </div>
+        
+        <div class="search-engine">
+            <div class="search-bar">
+                <input type="text" id="q" placeholder="Cerca nel sito..." onkeyup="app.search()">
+                <i class="fa fa-search"></i>
             </div>
-            <button class="logout-ico" onclick="app.logout()"><i class="fa fa-power-off"></i></button>
-        </header>
-
-        <div class="app-body">
-            <nav class="side-nav">
-                <div class="nav-item" onclick="app.loadHome()"><i class="fa fa-home"></i> Home</div>
-                <div class="nav-item" onclick="app.showLikes()"><i class="fa fa-heart"></i> Like</div>
-                <div class="nav-item" onclick="app.showMine()"><i class="fa fa-folder"></i> Caricati</div>
-                <div class="nav-item" onclick="app.modal('settings')"><i class="fa fa-sliders"></i> Impostazioni</div>
-                
-                <div class="ad-banner">
-                    <small>ADV SPACE</small><br>
-                    <a href="mailto:dome0082@gmail.com">dome0082@gmail.com</a>
-                </div>
-            </nav>
-
-            <main class="viewport">
-                <div class="upload-zone">
-                    <input type="text" id="up-name" placeholder="Nome file...">
-                    <input type="file" id="up-file">
-                    <button onclick="app.upload()">UPLOAD</button>
-                    <div id="p-wrap" class="p-wrap" style="display:none"><div id="p-bar">0%</div></div>
-                </div>
-                <div id="grid" class="grid"></div>
-            </main>
-
-            <aside class="chat-panel">
-                <div class="chat-list" id="chat-box"></div>
-                <div class="chat-ctrl">
-                    <input type="text" id="chat-in" placeholder="Messaggio...">
-                    <button onclick="app.sendChat()"><i class="fa fa-send"></i></button>
-                </div>
-            </aside>
+            <div class="filters">
+                <button onclick="app.filter('all')">Tutti</button>
+                <button onclick="app.filter('video')">Video</button>
+                <button onclick="app.filter('image')">Immagini</button>
+                <button onclick="app.filter('audio')">Audio</button>
+                <button onclick="app.filter('raw')">Doc</button>
+            </div>
         </div>
 
-        <div class="online-box" id="online-ui"></div>
+        <div id="auth-buttons" class="auth-btns">
+            <button onclick="app.modal('login-modal')">Accedi / Registrati</button>
+        </div>
+        <div id="user-info" class="user-info" style="display:none;">
+            <span id="user-email-display"></span>
+            <button onclick="app.logout()" class="btn-red"><i class="fa fa-sign-out"></i></button>
+        </div>
+    </header>
+
+    <div class="layout">
+        <nav class="sidebar">
+            <div class="nav-item" onclick="app.load()"><i class="fa fa-home"></i> Home</div>
+            
+            <div class="nav-section">Argomenti</div>
+            <div class="nav-item" onclick="app.filter('video')"><i class="fa fa-film"></i> Solo Video</div>
+            <div class="nav-item" onclick="app.filter('audio')"><i class="fa fa-music"></i> Solo Musica</div>
+            
+            <div class="nav-section">Area Personale</div>
+            <div class="nav-item requires-auth" onclick="app.showLikes()"><i class="fa fa-heart"></i> I miei Like</div>
+            <div class="nav-item requires-auth" onclick="app.showMine()"><i class="fa fa-download"></i> I miei Download</div>
+            <div class="nav-item requires-auth" onclick="app.modal('settings-modal')"><i class="fa fa-cogs"></i> Impostazioni</div>
+            
+            <div class="ad-banner">
+                <b>PUBBLICITÀ</b><br>
+                <a href="mailto:dome0082@gmail.com">dome0082@gmail.com</a>
+            </div>
+        </nav>
+
+        <main class="content-area">
+            <div id="upload-zone" class="upload-zone" style="display:none;">
+                <input type="text" id="up-name" placeholder="Titolo file...">
+                <input type="file" id="up-file">
+                <button onclick="app.upload()">CARICA FILE</button>
+                <div id="p-wrap" class="p-wrap" style="display:none"><div id="p-bar">0%</div></div>
+            </div>
+            <div id="grid" class="grid"></div>
+        </main>
+
+        <aside class="right-panel">
+            <div class="top-videos">
+                <h4><i class="fa fa-fire"></i> Video Più Visti</h4>
+                <div id="top-videos-list"></div>
+            </div>
+            
+            <div class="chat-container">
+                <h4><i class="fa fa-comments"></i> Chat Globale</h4>
+                <div id="chat-box" class="chat-box"></div>
+                <div class="chat-input requires-auth" id="chat-input-area" style="display:none;">
+                    <input type="text" id="chat-msg" placeholder="Scrivi qui...">
+                    <button onclick="app.sendChat()"><i class="fa fa-paper-plane"></i></button>
+                </div>
+                <div class="chat-guest-msg" id="chat-guest-msg">Accedi per chattare</div>
+            </div>
+        </aside>
     </div>
 
-    <div id="modal-player" class="modal">
-        <div class="modal-content">
+    <div id="online-box" class="online-box">Utenti Online: 0</div>
+
+    <div id="login-modal" class="modal">
+        <div class="modal-card">
+            <span class="close" onclick="app.closeModal('login-modal')">&times;</span>
+            <h2 style="color:red">xxxD Vault</h2>
+            <input type="email" id="log-email" placeholder="La tua Email">
+            <input type="password" id="log-pass" placeholder="Inventa una Password">
+            <button onclick="app.login()">Login</button>
+            <button onclick="app.register()" class="btn-alt">Registrati Nuova Email</button>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal">
+        <div class="modal-card">
+            <span class="close" onclick="app.closeModal('settings-modal')">&times;</span>
+            <h2>Impostazioni Account</h2>
+            <p>Email: <b id="set-email"></b></p>
+            <hr>
+            <h3>Cambia Password</h3>
+            <input type="password" id="old-pass" placeholder="Vecchia Password">
+            <input type="password" id="new-pass" placeholder="Nuova Password">
+            <button onclick="app.changePass()">Aggiorna Password</button>
+        </div>
+    </div>
+
+    <div id="player-modal" class="modal">
+        <div class="player-card">
             <span class="close" onclick="app.closePlayer()">&times;</span>
-            <div id="player-render"></div>
-            <div class="player-buttons">
+            <div id="media-render"></div>
+            <div class="player-controls">
                 <button onclick="app.pCtrl('prev')"><i class="fa fa-step-backward"></i></button>
                 <button onclick="app.pCtrl('play')"><i class="fa fa-play"></i></button>
                 <button onclick="app.pCtrl('pause')"><i class="fa fa-pause"></i></button>
@@ -85,15 +124,6 @@
                 <button onclick="app.pCtrl('next')"><i class="fa fa-step-forward"></i></button>
                 <button onclick="app.pCtrl('full')"><i class="fa fa-expand"></i></button>
             </div>
-        </div>
-    </div>
-
-    <div id="modal-settings" class="modal">
-        <div class="modal-content setting-card">
-            <h3>Parametri Sistema</h3>
-            <p>Video: <select><option>1080p Ultra</option><option>720p HD</option></select></p>
-            <p>Audio: <select><option>Dolby Digital</option><option>Stereo</option></select></p>
-            <button onclick="app.closeModal('settings')">Salva</button>
         </div>
     </div>
 

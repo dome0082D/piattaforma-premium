@@ -23,42 +23,50 @@ const upload = multer({ dest: 'uploads/' });
 const SECRET = process.env.JWT_SECRET || 'xxxd_super_admin_key_2026';
 const ADMIN_EMAIL = "dome0082@gmail.com";
 
-// Database
+// --- DATABASE ---
 const User = mongoose.model('User', new mongoose.Schema({
-  email: { type: String, unique: true },
-  password: String,
-  lastActive: { type: Date, default: Date.now },
-  registeredAt: { type: Date, default: Date.now }
+  email: { type: String, unique: true }, password: String, lastActive: { type: Date, default: Date.now }
 }));
 
 const Media = mongoose.model('Media', new mongoose.Schema({
-  titolo: String, url: String, public_id: String, tipo: String, 
-  formato: String, owner: String, likes: { type: Array, default: [] }, data: { type: Date, default: Date.now }
+  titolo: String, url: String, public_id: String, tipo: String, formato: String, 
+  owner: String, likes: { type: Array, default: [] }, views: { type: Number, default: 0 }, data: { type: Date, default: Date.now }
 }));
 
 const Chat = mongoose.model('Chat', new mongoose.Schema({
   user: String, msg: String, data: { type: Date, default: Date.now }
 }));
 
-mongoose.connect(process.env.MONGO_URI).then(() => console.log('✅ Vault Pro Online'));
+mongoose.connect(process.env.MONGO_URI).then(() => console.log('✅ DB Connesso'));
 
-// --- AUTH ---
-app.post('/api/auth/login', async (req, res) => {
-  const user = await User.findOne({ email: req.body.email });
-  if (!user || !(await bcrypt.compare(req.body.password, user.password))) return res.status(401).send("Error");
-  const token = jwt.sign({ email: user.email }, SECRET);
-  res.json({ token, email: user.email });
-});
-
+// --- AUTH & UTENTI ---
 app.post('/api/auth/register', async (req, res) => {
   try {
     const hash = await bcrypt.hash(req.body.password, 10);
     await new User({ email: req.body.email, password: hash }).save();
     res.json({ success: true });
-  } catch (e) { res.status(400).send("Email in uso"); }
+  } catch (e) { res.status(400).send("Email già in uso"); }
 });
 
-// --- MEDIA & ADMIN PRIVILEGES ---
+app.post('/api/auth/login', async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user || !(await bcrypt.compare(req.body.password, user.password))) return res.status(401).send("Credenziali errate");
+  const token = jwt.sign({ email: user.email }, SECRET);
+  res.json({ token, email: user.email });
+});
+
+app.post('/api/auth/changepassword', async (req, res) => {
+  const { email, oldPass, newPass } = req.body;
+  const user = await User.findOne({ email });
+  if (!user || !(await bcrypt.compare(oldPass, user.password))) return res.status(401).send("Password vecchia errata");
+  user.password = await bcrypt.hash(newPass, 10);
+  await user.save();
+  res.json({ success: true });
+});
+
+// --- MEDIA (Visibili a tutti, modificabili solo da loggati) ---
+app.get('/api/media', async (req, res) => res.json(await Media.find().sort({ data: -1 })));
+
 app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
     const result = await cloudinary.uploader.upload(req.file.path, { resource_type: 'auto', folder: 'vault_xxxd' });
@@ -75,29 +83,36 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 app.delete('/api/media/:id', async (req, res) => {
   const { userEmail } = req.body;
   const item = await Media.findById(req.params.id);
-  if (!item) return res.status(404).send("Not found");
-
-  // Controllo Poteri: Se è Dome o il proprietario
+  if (!item) return res.status(404).send("File non trovato");
+  // Controllo Poteri
   if (userEmail === ADMIN_EMAIL || item.owner === userEmail) {
     await cloudinary.uploader.destroy(item.public_id, { resource_type: item.tipo });
     await Media.findByIdAndDelete(req.params.id);
     return res.json({ success: true });
   }
-  res.status(403).send("Non autorizzato");
+  res.status(403).send("Non sei autorizzato a cancellare questo file");
 });
 
-app.get('/api/media', async (req, res) => res.json(await Media.find().sort({ data: -1 })));
+app.post('/api/media/:id/view', async (req, res) => {
+  const item = await Media.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } }, { new: true });
+  res.json(item);
+});
 
-// --- CHAT & HEARTBEAT ---
+app.post('/api/media/:id/like', async (req, res) => {
+  const item = await Media.findById(req.params.id);
+  if(!req.body.user) return res.status(401).send("Devi loggarti");
+  item.likes.includes(req.body.user) ? item.likes = item.likes.filter(u => u !== req.body.user) : item.likes.push(req.body.user);
+  await item.save(); res.json(item);
+});
+
+// --- CHAT & PING ---
+app.post('/api/chat', async (req, res) => { const m = new Chat(req.body); await m.save(); res.json(m); });
+app.get('/api/chat', async (req, res) => res.json(await Chat.find().sort({ data: 1 }).limit(50)));
+
 app.post('/api/ping', async (req, res) => {
-  await User.findOneAndUpdate({ email: req.body.email }, { lastActive: Date.now() });
+  if(req.body.email) await User.findOneAndUpdate({ email: req.body.email }, { lastActive: Date.now() });
   const online = await User.find({ lastActive: { $gte: new Date(Date.now() - 30000) } });
   res.json(online);
 });
-
-app.post('/api/chat', async (req, res) => {
-  const m = new Chat(req.body); await m.save(); res.json(m);
-});
-app.get('/api/chat', async (req, res) => res.json(await Chat.find().sort({ data: 1 }).limit(50)));
 
 app.listen(process.env.PORT || 10000, '0.0.0.0');
