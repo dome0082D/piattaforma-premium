@@ -13,44 +13,47 @@
     <header>
         <div class="header-left">
             <div id="clock-display" class="clock"></div>
-            <div class="logo-red" onclick="location.reload()">xxxD</div>
+            <div class="logo-red" onclick="location.reload()" title="Torna alla Home">xxxD</div>
         </div>
         
-        <div class="search-engine">
-            <div class="search-bar">
-                <input type="text" id="q" placeholder="Cerca nel sito..." onkeyup="app.search()">
-                <i class="fa fa-search"></i>
+        <div class="header-right">
+            <div class="search-engine">
+                <div class="search-bar">
+                    <input type="text" id="q" placeholder="Cerca file..." onkeyup="app.search()">
+                    <i class="fa fa-search"></i>
+                </div>
+                <div class="filters">
+                    <button onclick="app.filter('all')">Tutti</button>
+                    <button onclick="app.filter('video')">Video</button>
+                    <button onclick="app.filter('image')">Immagini</button>
+                    <button onclick="app.filter('audio')">Audio</button>
+                    <button onclick="app.filter('raw')">Doc / Gif</button>
+                </div>
             </div>
-            <div class="filters">
-                <button onclick="app.filter('all')">Tutti</button>
-                <button onclick="app.filter('video')">Video</button>
-                <button onclick="app.filter('image')">Immagini</button>
-                <button onclick="app.filter('audio')">Audio</button>
-                <button onclick="app.filter('raw')">Doc</button>
+            
+            <div id="auth-buttons">
+                <button class="btn-red" onclick="app.modal('login-modal')">Accedi / Registrati</button>
             </div>
-        </div>
-
-        <div id="auth-buttons" class="auth-btns">
-            <button onclick="app.modal('login-modal')">Accedi / Registrati</button>
-        </div>
-        <div id="user-info" class="user-info" style="display:none;">
-            <span id="user-email-display"></span>
-            <button onclick="app.logout()" class="btn-red"><i class="fa fa-sign-out"></i></button>
+            <div id="user-info" style="display:none;">
+                <span id="user-email-display" class="user-mail-txt"></span>
+                <button onclick="app.logout()" class="btn-dark" title="Logout"><i class="fa fa-sign-out-alt"></i></button>
+            </div>
         </div>
     </header>
 
     <div class="layout">
         <nav class="sidebar">
-            <div class="nav-item" onclick="app.load()"><i class="fa fa-home"></i> Home</div>
+            <div class="nav-item" onclick="app.load()"><i class="fa fa-home"></i> Home Page</div>
             
-            <div class="nav-section">Argomenti</div>
+            <div class="nav-section">Categorie</div>
             <div class="nav-item" onclick="app.filter('video')"><i class="fa fa-film"></i> Solo Video</div>
             <div class="nav-item" onclick="app.filter('audio')"><i class="fa fa-music"></i> Solo Musica</div>
+            <div class="nav-item" onclick="app.filter('raw')"><i class="fa fa-file-alt"></i> Documenti</div>
             
             <div class="nav-section">Area Personale</div>
-            <div class="nav-item requires-auth" onclick="app.showLikes()"><i class="fa fa-heart"></i> I miei Like</div>
-            <div class="nav-item requires-auth" onclick="app.showMine()"><i class="fa fa-download"></i> I miei Download</div>
-            <div class="nav-item requires-auth" onclick="app.modal('settings-modal')"><i class="fa fa-cogs"></i> Impostazioni</div>
+            <div class="nav-item auth-only" onclick="app.showLikes()"><i class="fa fa-heart"></i> I miei Like</div>
+            <div class="nav-item auth-only" onclick="app.showMine()"><i class="fa fa-download"></i> I miei Download</div>
+            <div class="nav-item auth-only" onclick="app.modal('settings-modal')"><i class="fa fa-cogs"></i> Impostazioni</div>
             
             <div class="ad-banner">
                 <b>PUBBLICITÀ</b><br>
@@ -59,70 +62,76 @@
         </nav>
 
         <main class="content-area">
-            <div id="upload-zone" class="upload-zone" style="display:none;">
-                <input type="text" id="up-name" placeholder="Titolo file...">
+            <div id="upload-zone" class="upload-zone auth-only" style="display:none;">
+                <input type="text" id="up-name" placeholder="Titolo del file...">
                 <input type="file" id="up-file">
-                <button onclick="app.upload()">CARICA FILE</button>
+                <button class="btn-red" onclick="app.upload()">CARICA</button>
                 <div id="p-wrap" class="p-wrap" style="display:none"><div id="p-bar">0%</div></div>
             </div>
             <div id="grid" class="grid"></div>
         </main>
 
         <aside class="right-panel">
-            <div class="top-videos">
-                <h4><i class="fa fa-fire"></i> Video Più Visti</h4>
-                <div id="top-videos-list"></div>
+            <div class="top-videos box-section">
+                <h4 class="title-red"><i class="fa fa-fire"></i> Video Più Visti Oggi</h4>
+                <div id="top-videos-list" class="scroll-list"></div>
             </div>
             
-            <div class="chat-container">
-                <h4><i class="fa fa-comments"></i> Chat Globale</h4>
-                <div id="chat-box" class="chat-box"></div>
-                <div class="chat-input requires-auth" id="chat-input-area" style="display:none;">
+            <div class="chat-container box-section">
+                <h4 class="title-red"><i class="fa fa-comments"></i> Chat Globale</h4>
+                <div id="chat-box" class="chat-box scroll-list"></div>
+                <div class="chat-input auth-only" id="chat-input-area" style="display:none;">
+                    <i class="fa fa-paperclip attach-btn" onclick="document.getElementById('chat-file').click()" title="Allega File"></i>
+                    <input type="file" id="chat-file" style="display:none" onchange="app.uploadToChat()">
                     <input type="text" id="chat-msg" placeholder="Scrivi qui...">
                     <button onclick="app.sendChat()"><i class="fa fa-paper-plane"></i></button>
                 </div>
-                <div class="chat-guest-msg" id="chat-guest-msg">Accedi per chattare</div>
+                <div class="chat-guest-msg auth-hidden">Accedi per chattare e inviare file</div>
+            </div>
+
+            <div class="online-container box-section">
+                <h4 class="title-red"><i class="fa fa-users"></i> Utenti Online</h4>
+                <div id="online-box" class="online-box scroll-list"></div>
             </div>
         </aside>
     </div>
 
-    <div id="online-box" class="online-box">Utenti Online: 0</div>
-
     <div id="login-modal" class="modal">
         <div class="modal-card">
             <span class="close" onclick="app.closeModal('login-modal')">&times;</span>
-            <h2 style="color:red">xxxD Vault</h2>
-            <input type="email" id="log-email" placeholder="La tua Email">
-            <input type="password" id="log-pass" placeholder="Inventa una Password">
-            <button onclick="app.login()">Login</button>
-            <button onclick="app.register()" class="btn-alt">Registrati Nuova Email</button>
+            <h2 style="color:var(--red)">xxxD Account</h2>
+            <p style="font-size:12px; color:#666">Anonimi: registratevi con email reale e password inventata.</p>
+            <input type="email" id="log-email" placeholder="Email Reale">
+            <input type="password" id="log-pass" placeholder="Password">
+            <button class="btn-red" onclick="app.login()" style="width:100%; margin-top:15px;">ACCEDI</button>
+            <button class="btn-dark" onclick="app.register()" style="width:100%; margin-top:10px;">REGISTRATI</button>
         </div>
     </div>
 
     <div id="settings-modal" class="modal">
         <div class="modal-card">
             <span class="close" onclick="app.closeModal('settings-modal')">&times;</span>
-            <h2>Impostazioni Account</h2>
-            <p>Email: <b id="set-email"></b></p>
+            <h2>Impostazioni</h2>
+            <p>Email Loggata: <b id="set-email" style="color:var(--red)"></b></p>
             <hr>
             <h3>Cambia Password</h3>
             <input type="password" id="old-pass" placeholder="Vecchia Password">
             <input type="password" id="new-pass" placeholder="Nuova Password">
-            <button onclick="app.changePass()">Aggiorna Password</button>
+            <button class="btn-red" onclick="app.changePass()" style="width:100%; margin-top:15px;">Aggiorna Password</button>
         </div>
     </div>
 
     <div id="player-modal" class="modal">
         <div class="player-card">
             <span class="close" onclick="app.closePlayer()">&times;</span>
-            <div id="media-render"></div>
+            <div id="media-render" class="media-wrapper"></div>
             <div class="player-controls">
-                <button onclick="app.pCtrl('prev')"><i class="fa fa-step-backward"></i></button>
-                <button onclick="app.pCtrl('play')"><i class="fa fa-play"></i></button>
-                <button onclick="app.pCtrl('pause')"><i class="fa fa-pause"></i></button>
-                <button onclick="app.pCtrl('stop')"><i class="fa fa-stop"></i></button>
-                <button onclick="app.pCtrl('next')"><i class="fa fa-step-forward"></i></button>
-                <button onclick="app.pCtrl('full')"><i class="fa fa-expand"></i></button>
+                <button onclick="app.pCtrl('prev')" title="Indietro"><i class="fa fa-backward"></i></button>
+                <button onclick="app.pCtrl('play')" title="Play"><i class="fa fa-play"></i></button>
+                <button onclick="app.pCtrl('pause')" title="Pausa"><i class="fa fa-pause"></i></button>
+                <button onclick="app.pCtrl('stop')" title="Stop"><i class="fa fa-stop"></i></button>
+                <button onclick="app.pCtrl('next')" title="Avanti"><i class="fa fa-forward"></i></button>
+                <button onclick="app.pCtrl('full')" title="Schermo Intero"><i class="fa fa-expand"></i></button>
             </div>
         </div>
     </div>
